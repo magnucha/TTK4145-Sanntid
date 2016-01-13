@@ -1,0 +1,24 @@
+Concurrency is when several tasks can run in operlapping time periods, but it doesn't necessarily mean they will be running at the same instant. 
+Parallellism is when several tasks actually run at the same time (required a multi-core machine). Concurrency can be seen as a sort of generalized parallellism. for example multitasking on a single-core machine.
+
+To increase computation power one of two things can be done: faster clock cycles, or add more cores. Because increasing the clock speed also increases power consumption,
+there is a limit to how fast a CPU can be. By adding more cores instead we can avoid increasing the clock speed, while increasing the compatation power as several processes can be run at the same time (parallellism).
+
+Concurrent programming can be useful if we have a program that runs several processes, independently of one another. Now the processes can be executed in overlapping time frames, meaning a we will not encounter a situation where a quick, but important process has to wait for a really long one to complete.
+
+Both. 
+
+Processes are the top level: The action to be executed. Has its own address space.
+Each process can be divided into thread, which can be run in parallell to speed up the process execution. Threads exsist within their processes' address space.
+Green threads are threads that are scheduled by a virtual machine instead of the operating system. This means that they emulated a multi-threaded environment without needing to rely on the operatins system. As such, they will work even though the system does not have native thread support. Green threads are usually used if the OS does not provide a thread API. However, they can NOT work in parallell.
+A coroutine is a subroutine with multiple enrty/exit points. This allows for concurrency within subroutines.
+
+pthread_create() creates a thread.
+threading.Thread() creates a thread.
+go creates a goroutine, which is basically a green thread.
+
+The Python GIL ensures that a multiple threads do not access the same interpreter internals at the same time, by sequentializing the access. This means a program can not fully take advantage of multithreading, because they all have to wait to permission to continue. As such, the GIL can easily become a bottleneck.
+
+A workaround for the GIL can be using the "multiprocessing" package. This module side-steps the GIL issue by using subprocesses instead of threads.
+
+"func GOMAXPROCS(n int) int" changes the limit of how many OS threads can be used to execute user-level Go code simultaneously.

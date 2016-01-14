@@ -1,3 +1,5 @@
+Exercise 3:
+
 Concurrency is when several tasks can run in operlapping time periods, but it doesn't necessarily mean they will be running at the same instant. 
 Parallellism is when several tasks actually run at the same time (required a multi-core machine). Concurrency can be seen as a sort of generalized parallellism. for example multitasking on a single-core machine.
 
@@ -22,3 +24,15 @@ The Python GIL ensures that a multiple threads do not access the same interprete
 A workaround for the GIL can be using the "multiprocessing" package. This module side-steps the GIL issue by using subprocesses instead of threads.
 
 "func GOMAXPROCS(n int) int" changes the limit of how many OS threads can be used to execute user-level Go code simultaneously.
+
+
+Exercise 4:
+When executing the code we often get values not equal to zero. This happens when the execution of "i++" and "i--" interleave.
+These can both be seen as containing three steps: Retrieve the value of i, change the value, store the changed value.
+If these are interleaved, a scenario might look like this:
+Thread A: Retrieve i, result is 0
+Thread B: Retrieve i, result is 0
+Thread A: Increment i, result is 1
+Thread B: Decrement i, result is -1
+Thread A: Store value, i is now 1
+Thread B: Store value, i is now -1

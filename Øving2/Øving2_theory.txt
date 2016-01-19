@@ -1,0 +1,11 @@
+An atomic operation is an operation which actually just requires one operation. (Unlike i++, which requires 3).
+To implement an atomic operation, one has to go all the way down to hardware-level.
+
+A semaphore is a variable which cannot be reduced below 0. They are used as a flag to control access to a shared resource.
+A binary semashore can only take the values 0/1, and a counting semaphore can take all integer values >0.
+
+Mutual exclusion is the requirement that no two threads are in their critical section at the same time.
+A mutex is the semaphore used to achieve this. (The "you may not do anything until you have ownership of me" thing).
+
+The critical section is the part of code where a thread accesses the shared variables. This is the section typically
+locked by a mutex.

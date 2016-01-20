@@ -10,21 +10,21 @@ pthread_mutex_t counter_lock = PTHREAD_MUTEX_INITIALIZER;
 
 void* function1(){
 	int j;
-	pthread_mutex_lock(&counter_lock);
 	for(j = 0; j < 1000000; j++){
+		pthread_mutex_lock(&counter_lock);
 		i++;
+		pthread_mutex_unlock(&counter_lock);
 	}
-	pthread_mutex_unlock(&counter_lock);
 	return NULL;
 }
 
 void* function2(){
 	int k;
-	pthread_mutex_lock(&counter_lock);
 	for(k = 0; k < 1000000; k++){
+		pthread_mutex_lock(&counter_lock);
 		i--;
+		pthread_mutex_unlock(&counter_lock);
 	}
-	pthread_mutex_unlock(&counter_lock);
 	return NULL;
 }
 
@@ -35,8 +35,9 @@ int main(){
 	pthread_create(&thread_1, NULL, function1, NULL);
 	pthread_create(&thread_2, NULL, function2, NULL);
 	
-	pthread_mutex_destroy(&counter_lock);
 	pthread_join(thread_1, NULL);
 	pthread_join(thread_2, NULL);
+	pthread_mutex_destroy(&counter_lock);
 	printf("%d\n", i);
+	return 0;
 }

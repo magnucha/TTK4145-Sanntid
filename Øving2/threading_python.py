@@ -2,6 +2,7 @@
 # python helloworld_python.py
 
 from threading import Thread
+import threading
 
 i = 0
 
@@ -9,15 +10,22 @@ i = 0
 #   In Python you "import" a global variable, instead of "export"ing it when you declare it
 #   (This is probably an effort to make you feel bad about typing the word "global")
 
+lock = threading.Lock()
+
+
 def function1():
 	global i
 	for j in range(0, 1000000):
-	    i += 1
+		lock.acquire()
+		i += 1
+		lock.release()
 
 def function2():
 	global i
 	for k in range(0, 1000000):
+		lock.acquire()
 		i -= 1
+		lock.release()
 
 def main():
     thread_1 = Thread(target = function1, args = (),)

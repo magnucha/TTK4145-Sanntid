@@ -1,31 +1,31 @@
-package UDP
+package main
 
 import (
-	"io"
 	"log"
 	"net"
+	"fmt"
 )
 
 func main(){
-	ListenAddr, err := net.ResolveAddr("udp", ":30000")
+	ListenAddr, err := net.ResolveUDPAddr("udp", ":30000")
 	if err != nil{
 		log.Fatal(err)
 	}
 	
-	buffer	byte[1024]
+	buffer := make([]byte,1024)
 	listenConn, err := net.ListenUDP("udp", ListenAddr)
 	if err != nil{
 		log.Fatal(err)
 	}
 	defer listenConn.Close()
 	
-	for{
+	//for{
 		n_bytes, addr, err := listenConn.ReadFromUDP(buffer)
-		fmt.Println("Received: ", string(buf[0:n_bytes], " from ", addr)
+		fmt.Println("Received: ", string(buffer[0:n_bytes]), " from ", addr)
 		
 		if err != nil{
 			log.Fatal(err)
 		}
-	}		
+	//}		
 }
 

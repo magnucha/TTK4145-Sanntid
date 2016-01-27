@@ -9,25 +9,40 @@ import (
 func main(){
 	serverAddr := "129.241.187.23:20003"
 	
-	UDPAddr, err := net.ResolveUDPAddr("udp", serverAddr)
+	//Set up send socket
+	remoteAddr, err := net.ResolveUDPAddr("udp", serverAddr)
+	if err != nil{
+		log.Fatal(err)
+	}
+	socketSend, err := net.DialUDP("udp", nil, remoteAddr)
 	if err != nil{
 		log.Fatal(err)
 	}
 	
-	conn, err := net.DialUDP("udp", nil, UDPAddr)
+	//Set up receive socket
+	port, err := net.ResolveUDPAddr("udp", ":20003")
 	if err != nil{
 		log.Fatal(err)
 	}
-	defer conn.Close()
+	socketReceive, err := net.ListenUDP("udp", port)
+	if err != nil{
+		log.Fatal(err)
+	}
+
+
+
+	defer socketReceive.Close()
+	defer socketSend.Close()
 	
-	msg := "pella"
-	_, err = conn.Write([]byte(msg + "\x00"))
+	msg := "smmella"
+	_, err = socketSend.Write([]byte(msg + "\x00"))
 	if err != nil{
 		log.Fatal(err)
 	}
 	buffer := make([]byte,1024)
-
-	n_bytes, _, _ := conn.ReadFromUDP(buffer)
-	fmt.Println(buffer[:n_bytes])
-	
+	for{
+		n_bytes, addr, _ := socketReceive.ReadFromUDP(buffer)
+		fmt.Println(string(buffer[:n_bytes]))
+		fmt.Println(addr)
+	}
 }

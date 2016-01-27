@@ -39,11 +39,10 @@ func elev_init() {
     }
 	
 	
-    elev_set_stop_lamp(0);	//-----------------------------------_FIKS
+    elev_set_stop_lamp(0);
     elev_set_door_open_lamp(0);
     elev_set_floor_indicator(0);
 }
-
 
 func elev_set_motor_direction(dirn motor_dir) {
     if (dirn == 0){

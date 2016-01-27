@@ -5,7 +5,7 @@ package main
 
 import (
     . "fmt"
-    "runtime"
+    //"runtime"
     "time"
 )
 
@@ -38,7 +38,7 @@ func server(chan1 <-chan int, chan_finished <-chan int) int {
 
 
 func main() {
-    runtime.GOMAXPROCS(runtime.NumCPU())    // I guess this is a hint to what GOMAXPROCS does...
+    //runtime.GOMAXPROCS(runtime.NumCPU())    // I guess this is a hint to what GOMAXPROCS does...
                                             // Try doing the exercise both with and without it!
     
     chan1 := make(chan int)

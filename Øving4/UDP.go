@@ -1,4 +1,4 @@
-package network
+package main
 
 import (
 	"net"
@@ -18,7 +18,8 @@ func UDP_Create_Send_Socket(addr string) *net.UDPConn{
 	return connection
 }
 
-func UDP_Create_Receive_Socket(port string) *net.UDPConn{
+func UDP_Create_Receive_Socket(port string) *net.UDPConn {
+	fmt.Println("Creating UDP Socket..")
 	UDPaddr, err := net.ResolveUDPAddr("udp", port)
 	if err != nil{
 		fmt.Println(err)
@@ -38,14 +39,10 @@ func UDP_Send(conn *net.UDPConn, msg string){
 	}
 }
 
+//How to get the remote IP from addr?
+func UDP_Receive(conn *net.UDPConn) string {
+	msg := make([]byte, 1024)
+	conn.ReadFromUDP(msg)
 
-func UDP_Receive(conn *net.UDPConn) string{
-	msg := make([]byte, 512)
-	n_bytes, addr, _ := conn.ReadFromUDP(msg)
-
-	//Check if it's our broadcast
-	if msg[:n_bytes] == "pella"{
-		return addr
-	}
-	return nil
+	return strings.Trim(msg,"\x00")
 }

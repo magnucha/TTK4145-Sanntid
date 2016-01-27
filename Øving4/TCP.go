@@ -1,4 +1,4 @@
-package network
+package main
 
 import (
 	"net"
@@ -14,7 +14,7 @@ type TCPMessage struct {
 
 func TCP_Connect(IP string) *net.TCPConn {
 	//Get the servers TCP address
-	tcpAddr, err := net.ResolveTCPAddr("tcp", IP+":20003")
+	tcpAddr, err := net.ResolveTCPAddr("tcp", IP)
 	if err != nil {
 		fmt.Println("ResolveTCPAddr failed: ", err.Error())
 		return nil
@@ -29,7 +29,7 @@ func TCP_Connect(IP string) *net.TCPConn {
 	return conn
 }
 
-func TCP_Listen() *net.TCPConn {
+func TCP_Listen() net.Conn {
 	tcp_port, _ := net.ResolveTCPAddr("tcp", ":20003")
 	tcp_listener, _ := net.ListenTCP("tcp", tcp_port)
 	conn,_ := tcp_listener.Accept()

@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 )
 
 func main(){
-	serverAddr := "129.241.187.23:20003"
+	serverAddr := "129.241.187.23:20010"
 	
 	//Set up send socket
 	remoteAddr, err := net.ResolveUDPAddr("udp", serverAddr)
@@ -20,7 +21,7 @@ func main(){
 	}
 	
 	//Set up receive socket
-	port, err := net.ResolveUDPAddr("udp", ":20003")
+	port, err := net.ResolveUDPAddr("udp", ":20010")
 	if err != nil{
 		log.Fatal(err)
 	}
@@ -41,8 +42,12 @@ func main(){
 	}
 	buffer := make([]byte,1024)
 	for{
-		n_bytes, addr, _ := socketReceive.ReadFromUDP(buffer)
+		n_bytes, _, _ := socketReceive.ReadFromUDP(buffer)
 		fmt.Println(string(buffer[:n_bytes]))
-		fmt.Println(addr)
+		
+		msg := "smmella"
+		_, err = socketSend.Write([]byte(msg + "\x00"))
+
+		time.Sleep(time.Second)
 	}
 }

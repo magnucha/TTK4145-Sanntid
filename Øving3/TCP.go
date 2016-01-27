@@ -36,7 +36,7 @@ func main() {
 	if err != nil {
 		log.Fatal("DialTCP failed: ", err.Error())
 	}
-	fmt.Println(*tcpAddr)
+
 	//Receive welcome message
 	msg_rcpt := TCP_receive(conn)
 	fmt.Println(msg_rcpt)

@@ -18,37 +18,24 @@ func TCP_send(conn net.Conn, msg string) {
 }
 
 func main() {
-	serverAddr := ":33546"
-
 	fmt.Println("Launching TCP server...")
 	input := bufio.NewReader(os.Stdin)
 	
-	//Get the servers TCP address
-	tcpAddr, err := net.ResolveTCPAddr("tcp", serverAddr)
-	if err {
-		fmt.Println("ResolveTCPAddr failed: ", err.Error())
-		return
-	}
+	//Listen on port 33546
+	listener,_ := net.Listen("tcp", ":33546")
 	
-	//Connect to the TCP server
-	conn, err := net.DialTCP("tcp", nil, tcpAddr)
-	if err {
-		fmt.Println("DialTCP failed: ", err.Error())
-		return
-	}
-
-	//Close connection when the script ends
-	defer conn.Close()
+	//Set to accept connections
+	conn, _ := listener.Accept()
 	
 	for {
-		//Send message to the server
+		//Send inititial message
 		fmt.Print("Enter message to send to server: ")
 		msg_send, _ := input.ReadString('\n')
 		TCP_send(conn, msg_send)
 		
 		msg_rcpt := TCP_receive(conn)
 		
-		//Print received message to console
+		//DEBUG: Print received message to console
 		fmt.Print("Message received: ", string(msg_rcpt))
 		
 		//Prevent spamming the network

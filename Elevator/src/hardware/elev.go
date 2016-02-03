@@ -1,7 +1,6 @@
 package hardware
 
 import (
-	"config"
 	"errors"
 )
 
@@ -32,8 +31,8 @@ func elev_init() {
 	}
 	
 	//Disable lights in all buttons
-    for floor := 0; floor < config.NUM_FLOORS; floor++ {   
-        for button := 0; button < config.NUM_BUTTONS; button++ {
+    for floor := 0; floor < 4; floor++ {   
+        for button := 0; button < 3; button++ {
             elev_set_button_lamp(button, floor, 0);
         }
     }
@@ -58,7 +57,7 @@ func elev_set_motor_direction(dirn motor_dir) {
 
 
 func elev_set_button_lamp(button button_type, floor int, value int) {
-	if floor >= 0 && floor < config.NUM_FLOORS && button >= 0 && button < config.NUM_BUTTONS {
+	if floor >= 0 && floor < 4 && button >= 0 && button < 3 {
 	    if (value) {
     	    io_set_bit(lamp_channel_matrix[floor][button]);
    		} else {
@@ -69,7 +68,7 @@ func elev_set_button_lamp(button button_type, floor int, value int) {
 
 
 func elev_set_floor_indicator(floor int) {
-	if !(floor >= 0 && floor < config.NUM_FLOORS) {
+	if !(floor >= 0 && floor < 4) {
 		error.New("Floor indicator: Invalid floor")
 		return;
 	}

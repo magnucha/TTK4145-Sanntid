@@ -1,12 +1,10 @@
 //Go interface to the elevator drivers
 //Copied from Morten Fyhn
 
-package hw
+package hardware
 
-/*
 #cgo LDFLAGS: -lcomedi -lm
 #include "io.h"
-*/
 
 import "C"
 

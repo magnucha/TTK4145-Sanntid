@@ -34,7 +34,7 @@ func UDP_Create_Receive_Socket(port string) *net.UDPConn {
 }
 
 func UDP_Broadcast_Presence(conn *net.UDPConn) {
-	for i:=0; i<10; i++ {
+	for i:=0; i<1; i++ {
 		UDP_Send(conn, config.UDP_PRESENCE_MSG)
 		time.Sleep(100*time.Millisecond)
 	}
@@ -52,6 +52,6 @@ func UDP_Receive(conn *net.UDPConn, ch_received chan<- config.NetworkMessage) {
 		msg := make([]byte, 1024)
 		length, raddr, _ := conn.ReadFromUDP(msg)
 		received_msg := config.NetworkMessage{Raddr: raddr.IP.String(), Data: msg, Length: length}
-		ch_received <-received_msg
+		ch_received <- received_msg
 	}
 }

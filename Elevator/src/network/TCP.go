@@ -23,7 +23,7 @@ func TCP_Connect(IP string) net.TCPConn {
 }
 
 func TCP_Listen_And_Store_Conn() {
-	tcp_port, _ := net.ResolveTCPAddr("tcp", ":20003")
+	tcp_port, _ := net.ResolveTCPAddr("tcp", config.TCP_PORT)
 	tcp_listener, _ := net.ListenTCP("tcp", tcp_port)
 	for {
 		conn,_ := tcp_listener.AcceptTCP()
@@ -37,12 +37,15 @@ func TCP_Broadcast(ch_transmit <-chan config.NetworkMessage) {
 		msg := <- ch_transmit
 		for i:=0; i<len(TCP_connections); i++ {
 			TCP_Transmit(&TCP_connections[i], msg)
+			//log.Printf("Sent %s to %s", msg.Data, TCP_connections[i].RemoteAddr().String())
 		}
 	}
 }
 
 func TCP_Transmit(conn *net.TCPConn, msg config.NetworkMessage) {
-	msg.Data = append(msg.Data, byte('\x00'))
+	log.Printf("Transmitting...")
+	//msg.Data = append(msg.Data, byte('\x00'))
+	msg.Data = append([]byte("Halla paa lan, big papi!"), byte('\x00'))
 	conn.Write(msg.Data)
 }
 

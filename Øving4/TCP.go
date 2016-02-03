@@ -4,13 +4,8 @@ import (
 	"net"
 	"fmt"
 	"bufio"
+	"config"
 )
-
-type TCPMessage struct {
-	remote_addr string 	//The remote address we are sending to /receiving from
-	data []byte			
-	length int			//Length of received data, nil when sending
-}
 
 func TCP_Connect(IP string) *net.TCPConn {
 	//Get the servers TCP address
@@ -29,15 +24,20 @@ func TCP_Connect(IP string) *net.TCPConn {
 	return conn
 }
 
-func TCP_Listen() net.Conn {
+func TCP_Listen() {
 	tcp_port, _ := net.ResolveTCPAddr("tcp", ":20003")
 	tcp_listener, _ := net.ListenTCP("tcp", tcp_port)
-	conn,_ := tcp_listener.Accept()
-	return conn
+	for {
+		conn,_ := tcp_listener.Accept()
+		ch_TCP_new_connection <- conn
+	}
 }
 
-func TCP_Send(conn *net.TCPConn, msg string) {
-	conn.Write([]byte(msg + string('\x00')))
+func TCP_Transmit(conn *net.TCPConn, ch_transmit <-chan NetworkMessage) {
+	for {
+		msg <- ch_transmit
+		conn.Write([]byte(msg.data + string('\x00')))
+	}
 }
 
 func TCP_Receive(conn *net.TCPConn) string {

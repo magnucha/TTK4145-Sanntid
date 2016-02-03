@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+
 func UDP_Create_Send_Socket(addr string) *net.UDPConn{
 	UDPaddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil{
@@ -39,10 +40,11 @@ func UDP_Send(conn *net.UDPConn, msg string){
 	}
 }
 
-//How to get the remote IP from addr?
-func UDP_Receive(conn *net.UDPConn) string {
-	msg := make([]byte, 1024)
-	conn.ReadFromUDP(msg)
-
-	return strings.Trim(msg,"\x00")
+func UDP_Receive(conn *net.UDPConn, ch_received <-chan NetworkMessage) {
+	for {
+		msg := make([]byte, 1024)
+		length, raddr, _ := conn.ReadFromUDP(msg)
+		received_msg := NetworkMessage{raddr: raddr.IP.String(), data: msg, length: length}
+		ch_received <-received_msg
+	}
 }

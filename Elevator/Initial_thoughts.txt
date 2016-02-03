@@ -1,0 +1,67 @@
+Programming language: Go
+Communication method: Message-passing
+
+Modules:
+	- Networking
+		- TCP
+			- Keep alive-handshaking?
+	- State machine
+		- Stores the state of all connected elevators
+		- Calculates the cost functions
+	- Queue handler (part of fsm?)
+		- Stores
+	- Control
+		- Control the elevator
+	- Hardware
+		- Read button/sensor input
+		- Control button panel lights
+		
+The modules will be split into threads. These will have their own "main" functions, which again will call all other needed functions. Goal: Make sure no two threads ever call the same function.
+
+
+
+Error handling:
+	Cases:
+		1) An elevator is disconnected from the network
+		2) A program freezes/stops
+		3) A random bit is changed in a program
+		
+	Remaining elevators will not be able to distinguish between 1) and 2) on another elevator.
+	
+	Solutions:
+		1/2)
+			- Other elevators must guarantee that the disconnected elevators order is completed
+			- 
+			
+Networking:
+	- Case: New elevator C added to network of A and B
+		- C broadcasts IP over UDP
+		- A and B connects to C via TCP (C will now only have an active server, while A and B have servers and clients)
+	- All communication done through TCP
+	- Non-blocking sockets and select() (Perhaps blocking sockets for important messages)
+	
+	
+
+Queue system:
+	- Queue is a two-dimentional array
+		- One column for each elevator
+	- Any new order/command is broadcasted
+		- All machines run through cost-function, and add it to appropriate queue
+		- Need an algorithm to place "hitch hiking" orders									<--------------------
+	- For equal cost functions, lowest IP takes the order
+	
+	
+
+Lighting:
+	- If an order button is pressed on one elevator, light it on all elevators
+	
+	
+	
+	TCP size = length(Q[0]) + ... + length(Q[n-1])
+	
+	1		2		3  					 ---> [1, 3U, 0, 2, 2D, 0, 3, 1, 2U, 0]
+	3U		2D		1
+	0		0		2U
+					0
+	
+	

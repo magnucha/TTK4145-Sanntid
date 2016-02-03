@@ -113,7 +113,7 @@ func elev_get_button_signal(button button_type, floor int) int {
         return 1;
     } else {
         return 0;
-    }    
+    }
 }
 
 

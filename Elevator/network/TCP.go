@@ -1,4 +1,4 @@
-package main
+package network
 
 import (
 	"net"
@@ -34,7 +34,9 @@ func TCP_Listen_And_Store_Conn() {
 }
 
 func TCP_Broadcast(ch_transmit <-chan config.NetworkMessage) {
-	for i=0
+	for i=0; i<len(config.TCP_connections); i++ {
+		TCP_Trasmit(config.TCP_connections[i], ch_transmit)
+	}
 }
 
 func TCP_Transmit(conn *net.TCPConn, ch_transmit <-chan config.NetworkMessage) {

@@ -1,8 +1,9 @@
-package main
+package network
 
 import (
 	"net"
 	"fmt"
+	"config"
 )
 
 

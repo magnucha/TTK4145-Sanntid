@@ -8,6 +8,10 @@ const NUM_FLOORS = 4
 const NUM_BUTTONS = 3
 const NUM_MAX_ELEVATORS = 4
 
+const UDP_PRESENCE_MSG = "Pella"
+const UDP_BROADCAST_ADDR = "255.255.255.255:20003"
+const TCP_PORT = ":30003"
+
 //Declare button types
 type ButtonType int
 const (

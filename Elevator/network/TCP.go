@@ -9,7 +9,7 @@ import (
 
 func TCP_Connect(IP string) *net.TCPConn {
 	//Get the servers TCP address
-	tcpAddr, err := net.ResolveTCPAddr("tcp", IP)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", IP+config.TCP_PORT)
 	if err != nil {
 		log.Printf("ResolveTCPAddr failed: %s", err)
 		return nil

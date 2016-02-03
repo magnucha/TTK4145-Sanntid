@@ -36,6 +36,11 @@ type NetworkMessage struct {
 
 TCP_connections := make([]conn.TCPConn,1)
 
+type Order struct{
+	active bool; //Is this button pressed?
+	addr string; //Which elevator executes this order
+}
+
 
 
 /*

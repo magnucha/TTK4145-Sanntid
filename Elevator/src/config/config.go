@@ -60,4 +60,4 @@ type Order struct{
 	Addr string; 						//Which elevator executes this order, blank for local elevator
 }
 
-var Active_elevs = make(map[string]ElevState)
+var Active_elevs = make(map[string]*ElevState)

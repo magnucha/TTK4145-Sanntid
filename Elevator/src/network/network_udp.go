@@ -42,7 +42,7 @@ func Add_Active_Elev(raddr string) {
 	}
 	if !already_active {
 		//Initialize to an invalid state
-		config.Active_elevs[raddr] = config.ElevState{Is_idle: true, Direction: config.DIR_STOP, Last_floor: -1, Destination_floor: -1}
+		config.Active_elevs[raddr] = &config.ElevState{Is_idle: true, Direction: config.DIR_STOP, Last_floor: -1, Destination_floor: -1}
 	}
 }
 
@@ -54,7 +54,7 @@ func Encode_And_Forward_Transmission(ch_transmit chan<- []byte, ch_outgoing_msg 
 		if err != nil {
 			log.Printf("UDP_Encode_And_Forward_Transmission: json error:", err)
 		}
-		ch_transmit <- config.MESSAGE_PREFIX + json_msg
+		ch_transmit <- append([]byte(config.MESSAGE_PREFIX), json_msg...)
 	}
 }
 

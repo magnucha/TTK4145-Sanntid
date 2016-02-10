@@ -2,13 +2,13 @@ package hardware
 
 import (
     "config"
-    "errors"
+    "log"
 )
 
 
 const MOTOR_SPEED = 2800
 
-var lamp_channel_matrix = [N_FLOORS][N_BUTTONS] int {
+var lamp_channel_matrix = [config.NUM_FLOORS][config.NUM_BUTTONS] int {
     {LIGHT_UP1, LIGHT_DOWN1, LIGHT_COMMAND1},
     {LIGHT_UP2, LIGHT_DOWN2, LIGHT_COMMAND2},
     {LIGHT_UP3, LIGHT_DOWN3, LIGHT_COMMAND3},
@@ -16,7 +16,7 @@ var lamp_channel_matrix = [N_FLOORS][N_BUTTONS] int {
 };
 
 
-var button_channel_matrix = [N_FLOORS][N_BUTTONS] int {
+var button_channel_matrix = [config.NUM_FLOORS][config.NUM_BUTTONS] int {
     {BUTTON_UP1, BUTTON_DOWN1, BUTTON_COMMAND1},
     {BUTTON_UP2, BUTTON_DOWN2, BUTTON_COMMAND2},
     {BUTTON_UP3, BUTTON_DOWN3, BUTTON_COMMAND3},
@@ -25,44 +25,52 @@ var button_channel_matrix = [N_FLOORS][N_BUTTONS] int {
 
 
 
-func Elev_Init() {
-    if !io_init() {
-        errors.New("Unable to initialize elevator hardware!");
-        return -1;
+func Elev_Init() bool {
+    if !IO_Init() {
+        log.Printf("Unable to initialize elevator hardware!")
+        return false
     }
     
     //Disable lights in all buttons
+    var button config.ButtonType
     for floor := 0; floor < config.NUM_FLOORS; floor++ {   
-        for button := 0; button < config.NUM_BUTTONS; button++ {
-            Elev_Set_Button_Lamp(button, floor, 0);
+        for button = 0; button < config.NUM_BUTTONS; button++ {
+            Elev_Set_Button_Lamp(button, floor, 0)
         }
     }
-    
-    
-    Elev_Set_Stop_Lamp(0);
-    Elev_Set_Door_Open_Lamp(0);
-    Elev_Set_Floor_Indicator(0);
+    Elev_Set_Stop_Lamp(0)
+    Elev_Set_Door_Open_Lamp(0)
+    Elev_Set_Floor_Indicator(0)
+
+    Elev_Set_Motor_Direction(config.DIR_UP)
+    for(Elev_Get_Floor_Sensor_Signal() == -1){}
+    Elev_Set_Motor_Direction(config.DIR_STOP)
+
+    config.Active_elevs[config.Laddr] = &config.ElevState{Is_idle: true, Direction: config.DIR_STOP, Last_floor: Elev_Get_Floor_Sensor_Signal(), Destination_floor: -1}
+
+
+    return true
 }
 
-func Elev_Set_Motor_Direction(dirn motor_dir) {
+func Elev_Set_Motor_Direction(dirn config.MotorDir) {
     if (dirn == 0){
-        io_write_analog(MOTOR, 0)
+        IO_Write_Analog(MOTOR, 0)
     } else if (dirn > 0) {
-        io_clear_bit(MOTORDIR);
-        io_write_analog(MOTOR, MOTOR_SPEED);
+        IO_Clear_Bit(MOTORDIR)
+        IO_Write_Analog(MOTOR, MOTOR_SPEED)
     } else if (dirn < 0) {
-        io_set_bit(MOTORDIR);
-        io_write_analog(MOTOR, MOTOR_SPEED);
+        IO_Set_Bit(MOTORDIR)
+        IO_Write_Analog(MOTOR, MOTOR_SPEED)
     }
 }
 
 
-func Elev_Set_Button_Lamp(button button_type, floor int, value int) {
+func Elev_Set_Button_Lamp(button config.ButtonType, floor int, value int) {
     if floor >= 0 && floor < config.NUM_FLOORS && button >= 0 && button < config.NUM_BUTTONS {
-        if (value) {
-            io_set_bit(lamp_channel_matrix[floor][button]);
+        if (value != 0) {
+            IO_Set_Bit(lamp_channel_matrix[floor][button])
         } else {
-             io_clear_bit(lamp_channel_matrix[floor][button]);
+             IO_Clear_Bit(lamp_channel_matrix[floor][button])
         }
     }
 }
@@ -70,73 +78,73 @@ func Elev_Set_Button_Lamp(button button_type, floor int, value int) {
 
 func Elev_Set_Floor_Indicator(floor int) {
     if !(floor >= 0 && floor < config.NUM_FLOORS) {
-        error.New("Floor indicator: Invalid floor")
-        return;
+        log.Printf("Floor indicator: Invalid floor")
+        return
     }
     
     // Binary encoding. One light must always be on.
-    if (floor & 0x02) {
-        io_set_bit(LIGHT_FLOOR_IND1);
+    if (floor & 0x02 != 0) {
+        IO_Set_Bit(LIGHT_FLOOR_IND1)
     } else {
-        io_clear_bit(LIGHT_FLOOR_IND1);
+        IO_Clear_Bit(LIGHT_FLOOR_IND1)
     }    
 
-    if (floor & 0x01) {
-        io_set_bit(LIGHT_FLOOR_IND2);
+    if (floor & 0x01 != 0) {
+        IO_Set_Bit(LIGHT_FLOOR_IND2)
     } else {
-        io_clear_bit(LIGHT_FLOOR_IND2);
+        IO_Clear_Bit(LIGHT_FLOOR_IND2)
     }    
 }
 
 
 func Elev_Set_Door_Open_Lamp(value int) {
-    if value {
-        io_set_bit(LIGHT_DOOR_OPEN);
+    if value != 0 {
+        IO_Set_Bit(LIGHT_DOOR_OPEN)
     } else {
-        io_clear_bit(LIGHT_DOOR_OPEN);
+        IO_Clear_Bit(LIGHT_DOOR_OPEN)
     }
 }
 
 
 func Elev_Set_Stop_Lamp(value int) {
-    if value {
-        io_set_bit(LIGHT_STOP);
+    if value != 0 {
+        IO_Set_Bit(LIGHT_STOP)
     } else {
-        io_clear_bit(LIGHT_STOP);
+        IO_Clear_Bit(LIGHT_STOP)
     }
 }
 
 
 
-func Elev_Get_Button_Signal(button button_type, floor int) int {
-    if (io_read_bit(button_channel_matrix[floor][button])) {
-        return 1;
+func Elev_Get_Button_Signal(button config.ButtonType, floor int) int {
+    if (IO_Read_Bit(button_channel_matrix[floor][button])) {
+        return 1
     } else {
-        return 0;
+        return 0
     }
 }
 
 
 func Elev_Get_Floor_Sensor_Signal() int {
-    if (io_read_bit(SENSOR_FLOOR1)) {
-        return 0;
-    } else if (io_read_bit(SENSOR_FLOOR2)) {
-        return 1;
-    } else if (io_read_bit(SENSOR_FLOOR3)) {
-        return 2;
-    } else if (io_read_bit(SENSOR_FLOOR4)) {
-        return 3;
+    if (IO_Read_Bit(SENSOR_FLOOR1)) {
+        return 0
+    } else if (IO_Read_Bit(SENSOR_FLOOR2)) {
+        return 1
+    } else if (IO_Read_Bit(SENSOR_FLOOR3)) {
+        return 2
+    } else if (IO_Read_Bit(SENSOR_FLOOR4)) {
+        return 3
     } else {
-        return -1;
+        return -1
     }
 }
 
 
-func Elev_Get_Stop_Signal() int {
-    return io_read_bit(STOP);
+func Elev_Get_Stop_Signal() bool {
+    return IO_Read_Bit(STOP)
 }
 
 
-func Elev_Get_Obstruction_Signal() int {
-    return io_read_bit(OBSTRUCTION);
+func Elev_Get_Obstruction_Signal() bool {
+    return IO_Read_Bit(OBSTRUCTION)
 }

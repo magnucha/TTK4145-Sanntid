@@ -71,10 +71,5 @@ func TCP_Decode_And_Forward_Reception(ch_received <-chan config.NetworkMessage, 
 	}
 }
 
-int l[5]
-
-cout << l printer &l[0]
-l[i] == *(l+i)
-
 
 

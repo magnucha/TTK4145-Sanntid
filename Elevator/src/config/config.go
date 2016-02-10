@@ -7,8 +7,9 @@ const NUM_MAX_ELEVATORS = 4
 const UDP_PRESENCE_MSG = "Pella"
 const UDP_BROADCAST_ADDR = "129.241.187.255"
 const UDP_BROADCAST_PORT = ":20003"
-
 var Laddr = ""
+
+const MESSAGE_PREFIX = "Ey Billy!"
 
 type ButtonType int
 const (

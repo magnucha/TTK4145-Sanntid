@@ -27,7 +27,7 @@ func TCP_Listen_And_Store_Conn() {
 	tcp_listener, _ := net.ListenTCP("tcp", tcp_port)
 	for {
 		conn,_ := tcp_listener.AcceptTCP()
-		TCP_connections = append(TCP_connections, *conn)
+		TCP_connections[*conn.RemoteAddr().String()] = *conn
 		log.Printf("TCP connection made to %s!", conn.RemoteAddr())
 	}
 }

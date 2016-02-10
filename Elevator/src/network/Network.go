@@ -9,7 +9,8 @@ import (
 
 //TODO: Need to create TCP_Receive(conn) routine for all new connections
 
-var TCP_connections = make([]net.TCPConn,0)
+//var TCP_connections = make([]net.TCPConn,0)
+var TCP_connections = make(map[string]net.TCPConn)
 
 func Network_Init(ch_outgoing_msg <-chan config.Message, ch_incoming_msg chan<- config.Message) {
 	
@@ -23,11 +24,12 @@ func Network_Init(ch_outgoing_msg <-chan config.Message, ch_incoming_msg chan<- 
 	go TCP_Encode_And_Forward_Transmission(ch_TCP_transmit, ch_outgoing_msg)
 	go TCP_Decode_And_Forward_Reception(ch_TCP_received, ch_incoming_msg)
 	
-	
+	//Begin listening to UDP after we broadcast, to avoid connecting to the local computer
 	UDP_Broadcast_Presence(UDP_broadcast_socket)
 	UDP_receive_socket := UDP_Create_Receive_Socket(config.UDP_BROADCAST_ADDR[15:])
 	go UDP_Receive(UDP_receive_socket, ch_UDP_received)
 	go Connect_TCP_On_UDP_Message(ch_UDP_received)
+	
 	
 	go TCP_Broadcast(ch_TCP_transmit)
 }
@@ -37,7 +39,7 @@ func Connect_TCP_On_UDP_Message(ch_UDP_received <-chan config.NetworkMessage) {
 		msg := <- ch_UDP_received
 		if string(msg.Data)[:len(config.UDP_PRESENCE_MSG)] == config.UDP_PRESENCE_MSG {
 			conn := TCP_Connect(msg.Raddr[:15])
-			TCP_connections = append(TCP_connections, conn)
+			TCP_connections[conn.RemoteAddr().String()] = conn
 			log.Printf("TCP connection made to %s! (2)", conn.RemoteAddr().String())
 		}
 	}
@@ -68,3 +70,11 @@ func TCP_Decode_And_Forward_Reception(ch_received <-chan config.NetworkMessage, 
 		ch_incoming_msg <- incoming
 	}
 }
+
+int l[5]
+
+cout << l printer &l[0]
+l[i] == *(l+i)
+
+
+

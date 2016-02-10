@@ -33,17 +33,17 @@ func UDP_Create_Listen_Socket(port string) *net.UDPConn {
 	return connection
 }
 
-func UDP_Broadcast_Presence(conn *net.UDPConn, ch_transmit chan config.NetworkMessage) {
+func UDP_Broadcast_Presence(conn *net.UDPConn, ch_transmit chan []byte) {
 	for i:=0; i<1; i++ {
-		ch_transmit <- config.UDP_PRESENCE_MSG
+		ch_transmit <- []byte(config.UDP_PRESENCE_MSG)
 		time.Sleep(100*time.Millisecond)
 	}
 }
 
-func UDP_Send(conn *net.UDPConn, ch_transmit <-chan config.NetworkMessage){
+func UDP_Send(conn *net.UDPConn, ch_transmit <-chan []byte){
 	for {
-		msg <- ch_transmit
-		_, err := conn.Write([]byte(msg.Data))
+		msg := <- ch_transmit
+		_, err := conn.Write(msg)
 		if err != nil{
 			log.Printf("UDP write error: %s", err.Error())
 		}

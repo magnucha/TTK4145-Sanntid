@@ -5,7 +5,8 @@ const NUM_BUTTONS = 3
 const NUM_MAX_ELEVATORS = 4
 
 const UDP_PRESENCE_MSG = "Pella"
-const UDP_BROADCAST_ADDR = "129.241.187.255:20003"
+const UDP_BROADCAST_ADDR = "129.241.187.255"
+const UDP_BROADCAST_PORT = ":20003"
 
 var Laddr = ""
 
@@ -39,7 +40,7 @@ const (
 )
 
 type Message struct { 					//The data to be sent through a NetworkMessage
-	Raddr string 'json:"-"'
+	Raddr string `json:"-"`
 	Msg_type MessageType
 	State ElevState		
 	Button_type ButtonType		
@@ -58,4 +59,4 @@ type Order struct{
 	Addr string; 						//Which elevator executes this order, blank for local elevator
 }
 
-var active_elevs = make(map[string]config.ElevState)
+var Active_elevs = make(map[string]ElevState)

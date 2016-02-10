@@ -33,7 +33,7 @@ func Message_Server() {
 				config.Active_elevs[msg.Raddr] = msg.State
 			case config.ADD_ORDER:
 				//ch_new_order <- msg
-				log.Printf("Floor: %s, Button: %s, Destination: %s Elevs: %s", msg.Floor, msg.Button_type, msg.State.Destination_floor, msg.Elevs_in_network_count)
+				log.Printf("Floor: %d, Button: %d, Destination: %d Elevs: %d", msg.Floor, msg.Button_type, msg.State.Destination_floor, msg.Elevs_in_network_count)
 			case config.DELETE_ORDER:
 				ch_del_order <- msg
 		}

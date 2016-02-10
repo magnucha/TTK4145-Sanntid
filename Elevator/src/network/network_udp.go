@@ -12,7 +12,7 @@ func Network_Init(ch_outgoing_msg <-chan config.Message, ch_incoming_msg chan<- 
 	ch_UDP_received := make(chan config.NetworkMessage, 5)
 	
 	UDP_broadcast_socket := UDP_Create_Send_Socket(config.UDP_BROADCAST_ADDR + config.UDP_BROADCAST_PORT)
-	UDP_listen_socket := UDP_Create_Listen_Socket(config.UDP_BROADCAST_ADDR[15:])
+	UDP_listen_socket := UDP_Create_Listen_Socket(config.UDP_BROADCAST_PORT)
 	
 	//We choose to begin receiving UDP after broadcast to avoid creating a connection to ourselves
 	go UDP_Send(UDP_broadcast_socket, ch_UDP_transmit)
@@ -60,13 +60,12 @@ func Encode_And_Forward_Transmission(ch_transmit chan<- []byte, ch_outgoing_msg 
 
 func Decode_And_Forward_Reception(ch_transmit chan<- []byte, ch_received <-chan config.NetworkMessage, ch_incoming_msg chan<- config.Message) {
 	for {
-		received := <- ch_received
-				
-		if (string(received.Data) == config.UDP_PRESENCE_MSG) {
+		received := <- ch_received	
+		if (string(received.Data)[:5] == config.UDP_PRESENCE_MSG) {
 			Add_Active_Elev(received.Raddr)
 		} else {
 			var msg config.Message
-			err := json.Unmarshal(received.Data, &msg)
+			err := json.Unmarshal(received.Data[:received.Length], &msg)
 			if err != nil {
 				log.Printf("TCP_Decode_And_Forward_Reception: json error:", err)
 			}

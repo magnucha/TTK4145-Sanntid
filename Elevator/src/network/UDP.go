@@ -54,7 +54,10 @@ func UDP_Receive(conn *net.UDPConn, ch_received chan<- config.NetworkMessage) {
 	for {
 		msg := make([]byte, 1024)
 		length, raddr, _ := conn.ReadFromUDP(msg)
-		received_msg := config.NetworkMessage{Raddr: raddr.IP.String()[:15], Data: msg, Length: length}
+		if temp_addr := raddr.IP.String(); temp_addr == config.Laddr || temp_addr == "129.241.187.23" {
+			continue
+		}
+		received_msg := config.NetworkMessage{Raddr: raddr.IP.String(), Data: msg, Length: length}
 		ch_received <- received_msg
 	}
 }

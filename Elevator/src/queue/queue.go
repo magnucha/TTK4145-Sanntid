@@ -4,7 +4,7 @@ import(
 	"config"
 )
 
-var queue = [NUM_FLOOR][NUM_BUTTONS] Order{};
+var queue = [config.NUM_FLOOR][config.NUM_BUTTONS] Order{};
 
 func Delete_Order(floor int, button ButtonType){
 	queue[floor][button].active = false;

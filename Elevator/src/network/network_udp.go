@@ -13,7 +13,8 @@ func Network_Init(ch_outgoing_msg <-chan config.Message, ch_incoming_msg chan<- 
 	
 	UDP_broadcast_socket := UDP_Create_Send_Socket(config.UDP_BROADCAST_ADDR + config.UDP_BROADCAST_PORT)
 	UDP_listen_socket := UDP_Create_Listen_Socket(config.UDP_BROADCAST_PORT)
-	
+	Store_Local_Addr()	
+
 	//We choose to begin receiving UDP after broadcast to avoid creating a connection to ourselves
 	go UDP_Send(UDP_broadcast_socket, ch_UDP_transmit)
 	UDP_Broadcast_Presence(UDP_broadcast_socket, ch_UDP_transmit)
@@ -24,12 +25,11 @@ func Network_Init(ch_outgoing_msg <-chan config.Message, ch_incoming_msg chan<- 
 }
 
 func Store_Local_Addr() {
-	baddr, _ := net.ResolveUDPAddr("udp4", config.UDP_BROADCAST_ADDR)
+	baddr, _ := net.ResolveUDPAddr("udp4", config.UDP_BROADCAST_ADDR + config.UDP_BROADCAST_PORT)
 	tempConn, _ := net.DialUDP("udp4", nil, baddr)
 	tempAddr := tempConn.LocalAddr()
 	laddr, _ := net.ResolveUDPAddr("udp4", tempAddr.String())
-	laddr.Port = 25609
-	config.Laddr = laddr.String()
+	config.Laddr = laddr.IP.String()
 	defer tempConn.Close()
 }
 

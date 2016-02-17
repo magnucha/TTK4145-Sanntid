@@ -4,10 +4,14 @@ import (
 	"net"
 	"log"
 	"time"
+	"os/exec"
 )
 
 func main(){
-	UDPaddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:9001")
+	backup := exec.Command("gnome-terminal", "-x", "sh", "-c", "go run backup.go")
+	backup.Run()
+	
+	UDPaddr, err := net.ResolveUDPAddr("udp", "198.168.1.255:9001")
 	if err != nil{
 		log.Printf(err.Error())
 	}

@@ -49,6 +49,11 @@ type Message struct { 					//The data to be sent through a NetworkMessage
 	Elevs_in_network_count int			//Used by receiver to check if sender and receiver "see" the same network, to make sure all necessary connections are made
 }
 
+type Button struct{
+	Button_type ButtonType
+	floor int
+}
+
 type NetworkMessage struct {
 	Raddr string						//The remote address we are receiving from, on form IP:port.
 	Data []byte			

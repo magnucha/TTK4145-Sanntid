@@ -63,3 +63,19 @@ func Change_Destination(floor int) {
 		local_elev.Direction = config.DIR_DOWN
 	}
 }
+
+func Read_Buttons(ch_button_polling chan<- Button){
+	var last_floor[config.NUM_BUTTONS][config.NUM_FLOORS] int
+	for{
+		time.Sleep(100*time.Millisecond)
+		for(button := 0; button < config.NUM_BUTTONS; button++){
+			for (floor := 0; floor < config.NUM_FLOORS; floor++){
+				value := Elev_Get_Button_Signal(button, floor)
+				if(value != 0 && value != last_floor[button][floor]){
+					button_channel <- Button(button, floor)
+				}
+				last_floor[button][floor] = value
+			}
+		}
+	}
+}

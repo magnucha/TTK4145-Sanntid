@@ -1,0 +1,7 @@
+An atomic operation is an operation which actually just requires one operation. (Unlike i++, which requires 3).
+To implement an atomic operation, one has to go all the way down to hardware-level.
+
+A semaphore is a variable which cannot be reduced below 0. They are used as a flag to control access to a shared resource.
+A binary semashore can only take the values 0/1, and a counting semaphore can take all integer values >0.
+
+

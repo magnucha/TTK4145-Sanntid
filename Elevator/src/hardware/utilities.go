@@ -89,14 +89,14 @@ func Set_Lights() {
 	}
 }
 
-func Floor_Poller() {
+func Floor_Poller(ch_reached_floor chan<- int) {
 	local_elev := config.Active_elevs[config.Laddr]
 	var current_floor int
 	var prev int
 	for {
 		current_floor = elev.Elev_Get_Floor_Sensor_Signal()
 		if (current_floor != -1 && current_floor != prev) {
-			local_elev.Last_floor = current_floor
+			ch_reached_floor <- current_floor
 		}
 	}
 }

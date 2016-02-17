@@ -13,7 +13,7 @@ func listen(UDP *net.UDPConn, ch chan<- int) {
 	for {
 		UDP.ReadFromUDP(buf[:])
 		
-		rec,_ := binary.Varint(buf)
+		rec,_ := binary.Uvarint(buf)
 		ch <- int(rec)
 		log.Printf("Recieved %d", int(rec))
 		time.Sleep(100*time.Millisecond)

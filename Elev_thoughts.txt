@@ -1,0 +1,14 @@
+Programming language: Go
+Communication method: Message-passing
+
+Modules:
+	- Networking
+	- State machine
+		- Stores the state of all connected elevators
+		- Calculates the cost functions
+	- I/O
+		- Read button input
+		- Control the elevator
+		- Control button panel lights
+		
+The modules will be split into threads. These will have their own "main" functions, which again will call all other needed functions. Goal: Make sure no two threads ever call the same function.

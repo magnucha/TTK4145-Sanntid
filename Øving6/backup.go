@@ -40,7 +40,7 @@ func main() {
 	counter := backup(listen)
 	listen.Close()
 	
-	addr, _ = net.ResolveUDPAddr("udp","198.168.1.255:9001")
+	addr, _ = net.ResolveUDPAddr("udp","192.168.1.255:9001")
 	broadcast, _ := net.DialUDP("udp", nil, addr)
 	
 	backup := exec.Command("gnome-terminal", "-x", "sh", "-c", "go run backup.go")

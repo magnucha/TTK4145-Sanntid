@@ -8,7 +8,7 @@ import (
 
 const MOTOR_SPEED = 2800
 
-var lamp_channel_matrix = [config.NUM_FLOORS][config.NUM_BUTTONS] int {
+var Lamp_channel_matrix = [config.NUM_FLOORS][config.NUM_BUTTONS] int {
     {LIGHT_UP1, LIGHT_DOWN1, LIGHT_COMMAND1},
     {LIGHT_UP2, LIGHT_DOWN2, LIGHT_COMMAND2},
     {LIGHT_UP3, LIGHT_DOWN3, LIGHT_COMMAND3},
@@ -16,7 +16,7 @@ var lamp_channel_matrix = [config.NUM_FLOORS][config.NUM_BUTTONS] int {
 };
 
 
-var button_channel_matrix = [config.NUM_FLOORS][config.NUM_BUTTONS] int {
+var Button_channel_matrix = [config.NUM_FLOORS][config.NUM_BUTTONS] int {
     {BUTTON_UP1, BUTTON_DOWN1, BUTTON_COMMAND1},
     {BUTTON_UP2, BUTTON_DOWN2, BUTTON_COMMAND2},
     {BUTTON_UP3, BUTTON_DOWN3, BUTTON_COMMAND3},

@@ -50,7 +50,6 @@ func Passing_Floor(floor int, dir config.MotorDir){
 	}
 }
 
-
 func Change_Destination(floor int) {
 	local_elev := config.Active_elevs[config.Laddr]
 	local_elev.Destination_floor = floor
@@ -79,3 +78,26 @@ func Read_Buttons(ch_button_polling chan<- Button){
 		}
 	}
 }
+
+func Set_Lights() {
+	for {
+		for (floor:=0; floor<len(queue.Queue); floor++) {
+			for (button:=0; button<len(queue.Queue[i]); button++) {
+				Elev_Set_Button_Lamp(elev.Button_channel_matrix[floor][button], floor, int(queue.Queue[floor][button].Active))
+			}
+		}
+	}
+}
+
+func Floor_Poller() {
+	local_elev := config.Active_elevs[config.Laddr]
+	var current_floor int
+	var prev int
+	for {
+		current_floor = elev.Elev_Get_Floor_Sensor_Signal()
+		if (current_floor != -1 && current_floor != prev) {
+			local_elev.Last_floor = current_floor
+		}
+	}
+}
+

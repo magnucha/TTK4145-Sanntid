@@ -28,19 +28,19 @@ func backup(UDP *net.UDPConn) int {
 		select {
 			case lastVal = <- ch:
 				break;
-			case <-time.After(5*time.Second):
+			case <-time.After(3*time.Second):
 				return lastVal
 		}
 	}
 }
 
 func main() {
-	addr, _ := net.ResolveUDPAddr("udp", ":9001")
+	addr, _ := net.ResolveUDPAddr("udp", ":20003")
 	listen, _ := net.ListenUDP("udp", addr)
-	counter := backup(listen)
+	counter := backup(listen) + 1 //Offset to avoid transmitting the same number twice
 	listen.Close()
 	
-	addr, _ = net.ResolveUDPAddr("udp","192.168.1.255:9001")
+	addr, _ = net.ResolveUDPAddr("udp","129.241.187.150:20003")
 	broadcast, _ := net.DialUDP("udp", nil, addr)
 	
 	backup := exec.Command("gnome-terminal", "-x", "sh", "-c", "go run backup.go")

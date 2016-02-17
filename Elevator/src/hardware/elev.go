@@ -27,7 +27,7 @@ var Button_channel_matrix = [config.NUM_FLOORS][config.NUM_BUTTONS] int {
 
 func Elev_Init() bool {
     if !IO_Init() {
-        log.Printf("Unable to initialize elevator hardware!")
+        //log.Printf("Unable to initialize elevator hardware!")
         return false
     }
     
@@ -68,9 +68,9 @@ func Elev_Set_Motor_Direction(dirn config.MotorDir) {
 func Elev_Set_Button_Lamp(button config.ButtonType, floor int, value int) {
     if floor >= 0 && floor < config.NUM_FLOORS && button >= 0 && button < config.NUM_BUTTONS {
         if (value != 0) {
-            IO_Set_Bit(lamp_channel_matrix[floor][button])
+            IO_Set_Bit(Lamp_channel_matrix[floor][button])
         } else {
-             IO_Clear_Bit(lamp_channel_matrix[floor][button])
+             IO_Clear_Bit(Lamp_channel_matrix[floor][button])
         }
     }
 }
@@ -117,7 +117,7 @@ func Elev_Set_Stop_Lamp(value int) {
 
 
 func Elev_Get_Button_Signal(button config.ButtonType, floor int) int {
-    if (IO_Read_Bit(button_channel_matrix[floor][button])) {
+    if (IO_Read_Bit(Button_channel_matrix[floor][button])) {
         return 1
     } else {
         return 0

@@ -30,6 +30,7 @@ func Store_Local_Addr() {
 	tempAddr := tempConn.LocalAddr()
 	laddr, _ := net.ResolveUDPAddr("udp4", tempAddr.String())
 	config.Laddr = laddr.IP.String()
+	config.Local_elev = config.Active_elevs[config.Laddr]
 	defer tempConn.Close()
 }
 

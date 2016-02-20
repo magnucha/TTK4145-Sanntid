@@ -44,14 +44,13 @@ type Message struct { 					//The data to be sent through a NetworkMessage
 	Raddr string `json:"-"`
 	Msg_type MessageType
 	State ElevState		
-	Button_type ButtonType		
-	Floor int			
+	Button ButtonStruct
 	Elevs_in_network_count int			//Used by receiver to check if sender and receiver "see" the same network, to make sure all necessary connections are made
 }
 
-type Button struct{
+type ButtonStruct struct{
 	Button_type ButtonType
-	floor int
+	Floor int
 }
 
 type NetworkMessage struct {
@@ -66,3 +65,4 @@ type Order struct{
 }
 
 var Active_elevs = make(map[string]*ElevState)
+var Local_elev *ElevState

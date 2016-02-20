@@ -7,28 +7,6 @@ import (
 	"time"
 )
 
-//Goes to floor and picks up any orders in the same direction
-/*func Go_To_Floor(floor int){
-	local_elev := config.Active_elevs[config.Laddr]
-	local_elev.Is_idle = false
-
-	Change_Destination(floor)
-	Elev_Set_Motor_Direction(local_elev.Direction)
-	for(local_elev.Destination_floor != Elev_Get_Floor_Sensor_Signal()){
-		if current_floor := Elev_Get_Floor_Sensor_Signal(); current_floor != -1{
-			Passing_Floor(current_floor, local_elev.Direction);
-		}
-	}
-	local_elev.Is_idle = true
-	Stop_On_Floor(config.DIR_STOP)
-}
-*/
-func Open_Door() {
-	Elev_Set_Door_Open_Lamp(1)
-	time.Sleep(2 * time.Second)
-	Elev_Set_Door_Open_Lamp(0)
-}
-
 func Stop_On_Floor() {
 	Elev_Set_Motor_Direction(config.DIR_STOP)
 	config.Local_elev.Direction = config.DIR_STOP

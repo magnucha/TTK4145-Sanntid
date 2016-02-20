@@ -7,6 +7,7 @@ import (
 	"network"
 	"queue"
 	"time"
+	"fsm"
 )
 
 var ch_incoming_msg = make(chan config.Message)
@@ -49,9 +50,7 @@ func Message_Server() {
 		case config.STATE_UPDATE:
 			*config.Active_elevs[msg.Raddr] = msg.State
 		case config.ADD_ORDER:
-			queue.Add_Order(msg.Button)
-			//ch_new_order <- msg
-			log.Printf("Floor: %d, Button: %d, Destination: %d Elevs: %d", msg.Button.Floor, msg.Button.Button_type, msg.State.Destination_floor, msg.Elevs_in_network_count)
+			fsm.Event_Order_Received(msg.button)
 		case config.DELETE_ORDER:
 			queue.Delete_Order(msg.Button.Floor)
 		}
@@ -62,18 +61,10 @@ func Channel_Server() {
 	for {
 		select {
 		case button := <-ch_button_pressed:
-			if button.Floor != hardware.Elev_Get_Floor_Sensor_Signal() {
-				queue.Add_Order(button)
-				ch_outgoing_msg <- config.Message{Msg_type: config.ADD_ORDER, Button: button}
-			}
+			ch_outgoing_msg <- config.Message{Msg_type: ADD_ORDER, Button: button}
+			fsm.Event_Order_Received(button)
 		case floor := <-ch_floor_poll:
-			config.Local_elev.Last_floor = floor
-			hardware.Elev_Set_Floor_Indicator(floor)
-			if queue.Check_Order(floor) {
-				queue.Delete_Order(floor)
-				ch_outgoing_msg <- config.Message{Msg_type: config.DELETE_ORDER, Button: config.ButtonStruct{Floor: floor}} //Fiksien popo
-				hardware.Stop_On_Floor()
-			}
+			fsm.Event_Reached_Floor(floor, ch_outgoing_msg)
 		}
 	}
 }

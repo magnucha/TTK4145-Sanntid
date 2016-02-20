@@ -27,9 +27,9 @@ const (
 
 type ElevState struct {
 	Is_idle bool
-	Direction MotorDir
+	Door_open bool
+	Direction MotorDir //General direction, not always current
 	Last_floor int
-	Destination_floor int
 }
 
 type MessageType int
@@ -60,8 +60,8 @@ type NetworkMessage struct {
 }
 
 type Order struct{
-	Active bool; 						//Is there an order here?
-	Addr string; 						//Which elevator executes this order, blank for local elevator
+	Active bool; 						//Is this button pressed?
+	Addr string; 						//Which elevator executes this order
 }
 
 var Active_elevs = make(map[string]*ElevState)

@@ -52,7 +52,7 @@ func Message_Server() {
 		case config.ADD_ORDER:
 			fsm.Event_Order_Received(msg.Button)
 		case config.DELETE_ORDER:
-			//queue.Delete_Order(msg.Button.Floor, ch_outgoing_msg)
+			queue.Delete_Order(msg.Button.Floor, ch_outgoing_msg)
 		}
 	}
 }

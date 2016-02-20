@@ -5,7 +5,6 @@ import (
 	"queue"
 	"hardware"
 	"time"
-	"log"
 )
 
 var ch_open_door = make(chan bool)
@@ -32,13 +31,11 @@ func Event_Order_Received(button config.ButtonStruct) {
 	queue.Add_Order(button)
 	
 	if config.Local_elev.Door_open {
-		log.Printf("1")
 		if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
-			queue.Delete_Order(button.Floor, ch_outgoing)
+			queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing)
 			ch_open_door <- true
 		}
 	} else if config.Local_elev.Is_idle {
-		log.Printf("2")
 		dir := queue.Choose_New_Direction()
 		config.Local_elev.Direction = dir
 		hardware.Elev_Set_Motor_Direction(dir)
@@ -56,7 +53,6 @@ func Event_Door_Closed() {
 	hardware.Elev_Set_Door_Open_Lamp(0)
 	dir := queue.Choose_New_Direction()
 	config.Local_elev.Direction = dir
-	log.Printf("Dir: %d", dir)
 	hardware.Elev_Set_Motor_Direction(dir)
 }
 
@@ -65,6 +61,7 @@ func Open_Door(ch_open <-chan bool) {
 	timer := time.NewTimer(0)
 	timer.Stop()
 	for {
+		time.Sleep(100*time.Millisecond)
 		select {
 		case <-ch_open:
 			timer.Reset(duration)

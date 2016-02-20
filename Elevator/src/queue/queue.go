@@ -13,7 +13,7 @@ func Delete_Order(floor int, ch_outgoing_msg chan<- config.Message) {
 		Queue[floor][button].Active = false
 		Queue[floor][button].Addr = ""
 	}
-	ch_outgoing_msg <- config.Message{Msg_type: config.DELETE_ORDER, Button: config.ButtonStruct{Floor: floor}}
+	 ch_outgoing_msg <- config.Message{Msg_type: config.DELETE_ORDER, Button: config.ButtonStruct{Floor: floor}}
 }
 
 func Add_Order(button config.ButtonStruct) {

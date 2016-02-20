@@ -43,7 +43,6 @@ func Add_Active_Elev(raddr string) {
 		}
 	}
 	if !already_active {
-		//Initialize to an invalid state
 		config.Active_elevs[raddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: -1}
 	}
 }

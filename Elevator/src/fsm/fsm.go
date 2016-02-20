@@ -5,16 +5,23 @@ import (
 	"queue"
 	"hardware"
 	"time"
+	"log"
 )
 
-ch_open_door := make(chan bool)
+var ch_open_door = make(chan bool)
+var ch_outgoing chan<- config.Message
+
+func FSM_Init(ch_outgoing_msg chan<- config.Message) {
+	ch_outgoing = ch_outgoing_msg
+	go Open_Door(ch_open_door)
+}
 
 func Event_Reached_Floor(floor int, ch_outgoing_msg chan<- config.Message) {
 	config.Local_elev.Last_floor = floor
 	hardware.Elev_Set_Floor_Indicator(floor)
-	if queue.Check_Order(floor) {
+	if queue.Should_Stop_On_Floor(floor) {
 		hardware.Elev_Set_Motor_Direction(config.DIR_STOP)
-		queue.Delete_Order(floor, ch_outgoing_msg)
+		queue.Delete_Order(floor, ch_outgoing)
 		ch_open_door <- true
 		config.Local_elev.Is_idle = true
 	}
@@ -25,16 +32,19 @@ func Event_Order_Received(button config.ButtonStruct) {
 	queue.Add_Order(button)
 	
 	if config.Local_elev.Door_open {
-		if queue.Check_Order(button.Floor) {
-			queue.Delete_Order(button.Floor)
+		log.Printf("1")
+		if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
+			queue.Delete_Order(button.Floor, ch_outgoing)
 			ch_open_door <- true
 		}
 	} else if config.Local_elev.Is_idle {
-		dir = queue.Choose_New_Direction()
+		log.Printf("2")
+		dir := queue.Choose_New_Direction()
 		config.Local_elev.Direction = dir
 		hardware.Elev_Set_Motor_Direction(dir)
-		if dir == config.DIR_STOP {
+		if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
 			ch_open_door <- true
+			queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing)
 		} else {
 			config.Local_elev.Is_idle = false
 		}
@@ -46,6 +56,7 @@ func Event_Door_Closed() {
 	hardware.Elev_Set_Door_Open_Lamp(0)
 	dir := queue.Choose_New_Direction()
 	config.Local_elev.Direction = dir
+	log.Printf("Dir: %d", dir)
 	hardware.Elev_Set_Motor_Direction(dir)
 }
 

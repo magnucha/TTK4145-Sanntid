@@ -7,14 +7,6 @@ import (
 	"time"
 )
 
-func Stop_On_Floor() {
-	Elev_Set_Motor_Direction(config.DIR_STOP)
-	config.Local_elev.Direction = config.DIR_STOP
-	Open_Door()
-	config.Local_elev.Is_idle = true
-	//Elev_Set_Motor_Direction(config.Local_elev.Direction)
-}
-
 //Check for orders in same direction as the floor you're passing
 /*func Passing_Floor(floor int, dir config.MotorDir){
 
@@ -31,18 +23,17 @@ func Stop_On_Floor() {
 	}
 }
 */
-func Change_Destination(floor int) {
-	config.Local_elev.Destination_floor = floor
-	config.Local_elev.Is_idle = false //Pella vekk
+// func Change_Destination(floor int) {
+// 	config.Local_elev.Is_idle = false //Pella vekk
 
-	if config.Local_elev.Last_floor < floor {
-		config.Local_elev.Direction = config.DIR_UP
-	} else if config.Local_elev.Last_floor == floor {
-		config.Local_elev.Direction = config.DIR_STOP
-	} else {
-		config.Local_elev.Direction = config.DIR_DOWN
-	}
-}
+// 	if config.Local_elev.Last_floor < floor {
+// 		config.Local_elev.Direction = config.DIR_UP
+// 	} else if config.Local_elev.Last_floor == floor {
+// 		config.Local_elev.Direction = config.DIR_STOP
+// 	} else {
+// 		config.Local_elev.Direction = config.DIR_DOWN
+// 	}
+// }
 
 func Read_Buttons(ch_button_polling chan<- config.ButtonStruct) {
 	var last_floor [config.NUM_BUTTONS][config.NUM_FLOORS]int
@@ -89,19 +80,3 @@ func Floor_Poller(ch_floor_poll chan<- int) {
 	}
 }
 
-func Basic_Drive() {
-	for {
-		time.Sleep(100 * time.Millisecond)
-		if config.Local_elev.Is_idle {
-			for floor := 0; floor < len(queue.Queue); floor++ {
-				for button := len(queue.Queue[floor]) - 1; button >= 0; button-- {
-					if queue.Queue[floor][button].Active {
-						Change_Destination(floor)
-						//log.Printf("Floor: %d Button: %d", floor, button)
-					}
-				}
-			}
-			Elev_Set_Motor_Direction(config.Local_elev.Direction)
-		}
-	}
-}

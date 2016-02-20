@@ -30,8 +30,8 @@ func main() {
 	go hardware.Read_Buttons(ch_button_pressed)
 	go hardware.Set_Lights()
 	go hardware.Floor_Poller(ch_floor_poll)
-	go hardware.Basic_Drive()
-
+	fsm.FSM_Init(ch_outgoing_msg)
+	
 	log.Printf("Elev addr: %s", config.Laddr)
 
 	for {
@@ -50,9 +50,9 @@ func Message_Server() {
 		case config.STATE_UPDATE:
 			*config.Active_elevs[msg.Raddr] = msg.State
 		case config.ADD_ORDER:
-			fsm.Event_Order_Received(msg.button)
+			fsm.Event_Order_Received(msg.Button)
 		case config.DELETE_ORDER:
-			queue.Delete_Order(msg.Button.Floor)
+			//queue.Delete_Order(msg.Button.Floor, ch_outgoing_msg)
 		}
 	}
 }
@@ -61,7 +61,7 @@ func Channel_Server() {
 	for {
 		select {
 		case button := <-ch_button_pressed:
-			ch_outgoing_msg <- config.Message{Msg_type: ADD_ORDER, Button: button}
+			ch_outgoing_msg <- config.Message{Msg_type: config.ADD_ORDER, Button: button}
 			fsm.Event_Order_Received(button)
 		case floor := <-ch_floor_poll:
 			fsm.Event_Reached_Floor(floor, ch_outgoing_msg)

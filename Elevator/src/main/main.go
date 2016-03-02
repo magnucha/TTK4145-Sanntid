@@ -81,7 +81,6 @@ func State_Spammer(){
 	for{
 		time.Sleep(500*time.Millisecond)
 		ch_outgoing_msg <- config.Message{Msg_type: config.STATE_UPDATE, State: *config.Active_elevs[config.Laddr]}
-		//config.Active_elevs[config.Laddr].Timer.Reset(config.TIMEOUT)
 	}
 }
 
@@ -119,4 +118,18 @@ Channel server:
 			- Continue to destination
 	- Completed order
 		- Broadcast DELETE_ORDER
+		
+
+Bestillingsutdeling:
+	- GetCost(Order, ElevState) int	//Returnerer cost til en bestilling for den gitte heisen
+	- AssignElev(Order)				//Finner beste heis, og setter Queue.Addr
+	- ReassignOrders(addr string) 	//Kaller AssignElev på alle bestillinger med addr=addr
+	
+	
+	
+	
+	
+	
+	
+	
 */

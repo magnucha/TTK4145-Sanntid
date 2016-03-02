@@ -13,7 +13,7 @@ var Laddr = ""
 
 const MESSAGE_PREFIX = "Ey Billy!"
 
-const TIMEOUT = 5*time.Second // Flytte til utilities?
+const TIMEOUT = 3*time.Second
 
 type ButtonType int
 const (
@@ -32,9 +32,9 @@ const (
 type ElevState struct {
 	Is_idle bool
 	Door_open bool
-	Direction MotorDir //General direction, not always current
+	Direction MotorDir 					//General direction, not always current
 	Last_floor int
-	Timer *time.Timer `json:"-"` //Each elevator got its own timer that resets when a STATE_UPDATE is received
+	Timer *time.Timer `json:"-"` 		//Each elevator got its own timer that resets when a STATE_UPDATE is received
 }
 
 type MessageType int

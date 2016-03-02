@@ -31,7 +31,7 @@ func main() {
 	go hardware.Read_Buttons(ch_button_pressed)
 	go hardware.Set_Lights()
 	go hardware.Floor_Poller(ch_floor_poll)
-	go State_Spammer()
+	//go State_Spammer()
 	fsm.FSM_Init(ch_outgoing_msg)
 	
 	log.Printf("Elev addr: %s", config.Laddr)
@@ -55,7 +55,7 @@ func Message_Server() {
 		case config.ADD_ORDER:
 			fsm.Event_Order_Received(msg.Button)
 		case config.DELETE_ORDER:
-			queue.Delete_Order(msg.Button.Floor, ch_outgoing_msg)
+			queue.Delete_Order(msg.Button.Floor, ch_outgoing_msg, false)
 		}
 	}
 }

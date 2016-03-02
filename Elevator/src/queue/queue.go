@@ -8,14 +8,16 @@ import (
 var Queue = [config.NUM_FLOORS][config.NUM_BUTTONS]config.Order{}
 
 //Assume everyone enters when we stop --> delete all orders on the floor
-func Delete_Order(floor int, ch_outgoing_msg chan<- config.Message) {
+func Delete_Order(floor int, ch_outgoing_msg chan<- config.Message, call_is_local bool) {
 	for button := config.BUTTON_CALL_UP; button <= config.BUTTON_COMMAND; button++ {
 		Queue[floor][button].Active = false
 		Queue[floor][button].Addr = ""
 	}
-	 ch_outgoing_msg <- config.Message{Msg_type: config.DELETE_ORDER, Button: config.ButtonStruct{Floor: floor}}
+	if call_is_local {
+		ch_outgoing_msg <- config.Message{Msg_type: config.DELETE_ORDER, Button: config.ButtonStruct{Floor: floor}}
+	}
 }
-
+ 	
 func Add_Order(button config.ButtonStruct) {
 	Queue[button.Floor][button.Button_type].Active = true
 	Queue[button.Floor][button.Button_type].Addr = "" //Use cost function when we get one(i.e. Assign_Order_To_Lift())

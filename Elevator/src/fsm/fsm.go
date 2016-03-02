@@ -20,7 +20,7 @@ func Event_Reached_Floor(floor int, ch_outgoing_msg chan<- config.Message) {
 	hardware.Elev_Set_Floor_Indicator(floor)
 	if queue.Should_Stop_On_Floor(floor) {
 		hardware.Elev_Set_Motor_Direction(config.DIR_STOP)
-		queue.Delete_Order(floor, ch_outgoing)
+		queue.Delete_Order(floor, ch_outgoing, true)
 		ch_open_door <- true
 		config.Local_elev.Is_idle = true
 	}
@@ -32,7 +32,7 @@ func Event_Order_Received(button config.ButtonStruct) {
 	
 	if config.Local_elev.Door_open {
 		if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
-			queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing)
+			queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing, true)
 			ch_open_door <- true
 		}
 	} else if config.Local_elev.Is_idle {
@@ -41,7 +41,7 @@ func Event_Order_Received(button config.ButtonStruct) {
 		hardware.Elev_Set_Motor_Direction(dir)
 		if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
 			ch_open_door <- true
-			queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing)
+			queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing, true)
 		} else {
 			config.Local_elev.Is_idle = false
 		}

@@ -1,5 +1,5 @@
-with Ada.Text_IO, Ada.Integer_Text_IO, Ada.Numerics.Float_Random;
-use  Ada.Text_IO, Ada.Integer_Text_IO, Ada.Numerics.Float_Random;
+with Ada.Text_IO, Ada.Integer_Text_IO, Ada.Numerics.Float_Random, Ada.Exceptions;
+use  Ada.Text_IO, Ada.Integer_Text_IO, Ada.Numerics.Float_Random, Ada.Exceptions;
 
 procedure exercise7 is
 
@@ -21,6 +21,14 @@ procedure exercise7 is
             ------------------------------------------
             -- PART 3: Complete the exit protocol here
             ------------------------------------------
+            Finished_Gate_Open := True;
+            Should_Commit := not Aborted;
+            if Finished'Count = 0 then
+            	Finished_Gate_Open := False;
+            	Aborted := False;
+            end if;
+            
+            
         end Finished;
 
         procedure Signal_Abort is
@@ -40,16 +48,18 @@ procedure exercise7 is
     
     function Unreliable_Slow_Add (x : Integer) return Integer is
     Error_Rate : Constant := 0.15;  -- (between 0 and 1)
+    num : Float := Random(Gen);
     begin
         -------------------------------------------
         -- PART 1: Create the transaction work here
         -------------------------------------------
         if Random(Gen) <= Error_Rate then
-        	delay Duration(Random(Gen)/2);
+        	delay Duration(num/2.0);
         	raise Count_Failed;
         else
-        	delay Duration(Random(Gen)*10);
+        	delay Duration(num*4.0);
         	return x+10;
+        end if;
     end Unreliable_Slow_Add;
 
 
@@ -69,13 +79,16 @@ procedure exercise7 is
             ---------------------------------------
             -- PART 2: Do the transaction work here             
             ---------------------------------------
-            Num := Unreliable_Slow_Add(Prev)
+            begin
+            Num := Unreliable_Slow_Add(Prev);
             exception
             	when Count_Failed =>
             		Manager.Signal_Abort;
             	when Error : others =>
             		Put_Line ("A strange error occured...");
-            Manager.Finished;            
+            end;
+            Manager.Finished;   
+                     
             
             if Manager.Commit = True then
                 Put_Line ("  Worker" & Integer'Image(Initial) & " comitting" & Integer'Image(Num));
@@ -86,7 +99,7 @@ procedure exercise7 is
                 -------------------------------------------
                 -- PART 2: Roll back to previous value here
                 -------------------------------------------
-               	Num := Prev
+               	Num := Prev;
             end if;
 
             Prev := Num;

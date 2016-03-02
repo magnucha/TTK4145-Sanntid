@@ -44,6 +44,12 @@ procedure exercise7 is
         -------------------------------------------
         -- PART 1: Create the transaction work here
         -------------------------------------------
+        if Random(Gen) <= Error_Rate then
+        	delay Duration(Random(Gen)/2);
+        	raise Count_Failed;
+        else
+        	delay Duration(Random(Gen)*10);
+        	return x+10;
     end Unreliable_Slow_Add;
 
 
@@ -60,10 +66,16 @@ procedure exercise7 is
         loop
             Put_Line ("Worker" & Integer'Image(Initial) & " started round" & Integer'Image(Round_Num));
             Round_Num := Round_Num + 1;
-
             ---------------------------------------
             -- PART 2: Do the transaction work here             
             ---------------------------------------
+            Num := Unreliable_Slow_Add(Prev)
+            exception
+            	when Count_Failed =>
+            		Manager.Signal_Abort;
+            	when Error : others =>
+            		Put_Line ("A strange error occured...");
+            Manager.Finished;            
             
             if Manager.Commit = True then
                 Put_Line ("  Worker" & Integer'Image(Initial) & " comitting" & Integer'Image(Num));
@@ -74,6 +86,7 @@ procedure exercise7 is
                 -------------------------------------------
                 -- PART 2: Roll back to previous value here
                 -------------------------------------------
+               	Num := Prev
             end if;
 
             Prev := Num;

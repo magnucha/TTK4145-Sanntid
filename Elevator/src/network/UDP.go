@@ -57,7 +57,6 @@ func UDP_Receive(conn *net.UDPConn, ch_received chan<- config.NetworkMessage) {
 		if raddr.IP.String() == config.Laddr || string(msg[:8]) == "You said"{
 			continue
 		}
-		log.Printf("Received: %s from %s", msg, raddr.IP)
 		received_msg := config.NetworkMessage{Raddr: raddr.IP.String(), Data: msg, Length: length}
 		ch_received <- received_msg
 	}

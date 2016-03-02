@@ -37,7 +37,10 @@ func main() {
 	log.Printf("Elev addr: %s", config.Laddr)
 
 	for {
-		time.Sleep(5 * time.Second)
+		time.Sleep(3 * time.Second)
+		for _, elev := range config.Active_elevs{
+			log.Printf("Elev floors: %d, Num elevs: %d", elev.Last_floor)
+		}
 	}
 
 }
@@ -49,9 +52,10 @@ func Message_Server() {
 		//case config.ACK:
 		//	Increment_Ack_Counter(msg)	//Not yet implemented
 		case config.STATE_UPDATE:
+			SetActive(msg.Raddr)
 			log.Printf("State spammer received: State: %d ", msg.State.Last_floor)
 			*config.Active_elevs[msg.Raddr] = msg.State
-			config.Active_elevs[msg.Raddr].Timer.Reset(config.TIMEOUT) //Reset local timer at state spammer
+			config.Active_elevs[msg.Raddr].Timer.Reset(config.TIMEOUT)
 		case config.ADD_ORDER:
 			fsm.Event_Order_Received(msg.Button)
 		case config.DELETE_ORDER:
@@ -84,19 +88,16 @@ func State_Spammer(){
 
 
 func SetActive(raddr string) {
-	already_active := false
 	for addr, _ := range config.Active_elevs {
 		if addr == raddr {
-			already_active = true
+			return
 		}
 	}
 	killer := func(){ //Poppiloppi-kode
 		delete(config.Active_elevs, raddr)
 		//Redistribute orders
 	}
-	if !already_active {
-		config.Active_elevs[raddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: -1, Timer: time.AfterFunc(config.TIMEOUT, killer)}
-	}
+	config.Active_elevs[raddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: -1, Timer: time.AfterFunc(config.TIMEOUT, killer)}
 }
 
 /*

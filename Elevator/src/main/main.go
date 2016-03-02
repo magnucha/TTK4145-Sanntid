@@ -31,7 +31,7 @@ func main() {
 	go hardware.Read_Buttons(ch_button_pressed)
 	go hardware.Set_Lights()
 	go hardware.Floor_Poller(ch_floor_poll)
-	//go State_Spammer()
+	go State_Spammer()
 	fsm.FSM_Init(ch_outgoing_msg)
 	
 	log.Printf("Elev addr: %s", config.Laddr)
@@ -39,7 +39,7 @@ func main() {
 	for {
 		time.Sleep(3 * time.Second)
 		for _, elev := range config.Active_elevs{
-			log.Printf("Elev floors: %d, Num elevs: %d", elev.Last_floor)
+			log.Printf("Elev floors: %d, Num elevs: %d", elev.Last_floor, len(config.Active_elevs))
 		}
 	}
 
@@ -52,9 +52,8 @@ func Message_Server() {
 		//case config.ACK:
 		//	Increment_Ack_Counter(msg)	//Not yet implemented
 		case config.STATE_UPDATE:
-			SetActive(msg.Raddr)
-			log.Printf("State spammer received: State: %d ", msg.State.Last_floor)
-			*config.Active_elevs[msg.Raddr] = msg.State
+			Set_Active(msg.Raddr)
+			State_Copy(config.Active_elevs[msg.Raddr], &msg.State)
 			config.Active_elevs[msg.Raddr].Timer.Reset(config.TIMEOUT)
 		case config.ADD_ORDER:
 			fsm.Event_Order_Received(msg.Button)
@@ -73,21 +72,21 @@ func Channel_Server() {
 		case floor := <-ch_floor_poll:
 			fsm.Event_Reached_Floor(floor, ch_outgoing_msg)
 		case raddr := <-ch_new_elev:
-			SetActive(raddr)
+			Set_Active(raddr)
 		}
 	}
 }
 
 func State_Spammer(){
 	for{
-		ch_outgoing_msg <- config.Message{Msg_type: config.STATE_UPDATE, State: *config.Active_elevs[config.Laddr]}
 		time.Sleep(500*time.Millisecond)
+		ch_outgoing_msg <- config.Message{Msg_type: config.STATE_UPDATE, State: *config.Active_elevs[config.Laddr]}
 		//config.Active_elevs[config.Laddr].Timer.Reset(config.TIMEOUT)
 	}
 }
 
 
-func SetActive(raddr string) {
+func Set_Active(raddr string) {
 	for addr, _ := range config.Active_elevs {
 		if addr == raddr {
 			return
@@ -98,6 +97,13 @@ func SetActive(raddr string) {
 		//Redistribute orders
 	}
 	config.Active_elevs[raddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: -1, Timer: time.AfterFunc(config.TIMEOUT, killer)}
+}
+
+func State_Copy(a *config.ElevState, b *config.ElevState) {
+	a.Is_idle = b.Is_idle
+	a.Door_open = b.Door_open
+	a.Direction = b.Direction
+	a.Last_floor = b.Last_floor
 }
 
 /*

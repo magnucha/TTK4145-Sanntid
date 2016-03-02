@@ -16,11 +16,12 @@ var ch_new_order = make(chan config.Message)
 var ch_del_order = make(chan config.Message)
 var ch_button_pressed = make(chan config.ButtonStruct)
 var ch_floor_poll = make(chan int)
+var ch_new_elev = make(chan string)
 
 //var heis config.ElevState
 
 func main() {
-	network.Network_Init(ch_outgoing_msg, ch_incoming_msg)
+	network.Network_Init(ch_outgoing_msg, ch_incoming_msg, ch_new_elev)
 	time.Sleep(time.Millisecond)
 	if !hardware.Elev_Init() {
 		log.Fatal("Unable to initialize elevator hardware!")
@@ -48,8 +49,9 @@ func Message_Server() {
 		//case config.ACK:
 		//	Increment_Ack_Counter(msg)	//Not yet implemented
 		case config.STATE_UPDATE:
+			log.Printf("State spammer received: State: %d ", msg.State.Last_floor)
 			*config.Active_elevs[msg.Raddr] = msg.State
-			//*config.Active_elevs[msg.Raddr].Timer.Reset(config.TIMEOUT) //Reset local timer at state spammer
+			config.Active_elevs[msg.Raddr].Timer.Reset(config.TIMEOUT) //Reset local timer at state spammer
 		case config.ADD_ORDER:
 			fsm.Event_Order_Received(msg.Button)
 		case config.DELETE_ORDER:
@@ -66,15 +68,34 @@ func Channel_Server() {
 			fsm.Event_Order_Received(button)
 		case floor := <-ch_floor_poll:
 			fsm.Event_Reached_Floor(floor, ch_outgoing_msg)
+		case raddr := <-ch_new_elev:
+			SetActive(raddr)
 		}
 	}
 }
 
 func State_Spammer(){
 	for{
-		ch_outgoing_msg <- config.Message{Msg_type: config.STATE_UPDATE, State: *config.Active_elevs[config.Laddr]} //Trenger vi sende elevs in network?
+		ch_outgoing_msg <- config.Message{Msg_type: config.STATE_UPDATE, State: *config.Active_elevs[config.Laddr]}
 		time.Sleep(500*time.Millisecond)
 		//config.Active_elevs[config.Laddr].Timer.Reset(config.TIMEOUT)
+	}
+}
+
+
+func SetActive(raddr string) {
+	already_active := false
+	for addr, _ := range config.Active_elevs {
+		if addr == raddr {
+			already_active = true
+		}
+	}
+	killer := func(){ //Poppiloppi-kode
+		delete(config.Active_elevs, raddr)
+		//Redistribute orders
+	}
+	if !already_active {
+		config.Active_elevs[raddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: -1, Timer: time.AfterFunc(config.TIMEOUT, killer)}
 	}
 }
 

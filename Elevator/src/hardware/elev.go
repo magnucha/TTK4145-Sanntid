@@ -44,8 +44,8 @@ func Elev_Init() bool {
 	}
 	Elev_Set_Motor_Direction(config.DIR_STOP)
 
-	config.Active_elevs[config.Laddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: Elev_Get_Floor_Sensor_Signal()} //Dont need timer on local elev?
-
+	config.Active_elevs[config.Laddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: Elev_Get_Floor_Sensor_Signal()}
+	config.Local_elev = config.Active_elevs[config.Laddr]
 	return true
 }
 

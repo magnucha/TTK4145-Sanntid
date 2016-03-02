@@ -5,10 +5,9 @@ import (
 	"encoding/json"
 	"log"
 	"net"
-	"time"
 )
 
-func Network_Init(ch_outgoing_msg <-chan config.Message, ch_incoming_msg chan<- config.Message) {
+func Network_Init(ch_outgoing_msg <-chan config.Message, ch_incoming_msg chan<- config.Message, ch_new_elev chan<- string) {
 	ch_UDP_transmit := make(chan []byte)
 	ch_UDP_received := make(chan config.NetworkMessage, 5)
 
@@ -22,7 +21,7 @@ func Network_Init(ch_outgoing_msg <-chan config.Message, ch_incoming_msg chan<- 
 	go UDP_Receive(UDP_listen_socket, ch_UDP_received)
 
 	go Encode_And_Forward_Transmission(ch_UDP_transmit, ch_outgoing_msg)
-	go Decode_And_Forward_Reception(ch_UDP_transmit, ch_UDP_received, ch_incoming_msg)
+	go Decode_And_Forward_Reception(ch_new_elev, ch_UDP_received, ch_incoming_msg)
 }
 
 func Store_Local_Addr() {
@@ -31,25 +30,9 @@ func Store_Local_Addr() {
 	tempAddr := tempConn.LocalAddr()
 	laddr, _ := net.ResolveUDPAddr("udp4", tempAddr.String())
 	config.Laddr = laddr.IP.String()
-	Add_Active_Elev(config.Laddr)
-	config.Local_elev = config.Active_elevs[config.Laddr]
 	defer tempConn.Close()
 }
 
-func Add_Active_Elev(raddr string) {
-	already_active := false
-	for addr, _ := range config.Active_elevs {
-		if addr == raddr {
-			already_active = true
-		}
-	}
-	killer := func(){ //Poppiloppi-kode
-		delete(config.Active_elevs, raddr)
-	}
-	if !already_active {
-		config.Active_elevs[raddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: -1, Timer: time.AfterFunc(config.TIMEOUT, killer)}
-	}
-}
 
 func Encode_And_Forward_Transmission(ch_transmit chan<- []byte, ch_outgoing_msg <-chan config.Message) {
 	for {
@@ -63,11 +46,11 @@ func Encode_And_Forward_Transmission(ch_transmit chan<- []byte, ch_outgoing_msg 
 	}
 }
 
-func Decode_And_Forward_Reception(ch_transmit chan<- []byte, ch_received <-chan config.NetworkMessage, ch_incoming_msg chan<- config.Message) {
+func Decode_And_Forward_Reception(ch_new_elev chan<- string, ch_received <-chan config.NetworkMessage, ch_incoming_msg chan<- config.Message) {
 	for {
 		received := <-ch_received
 		if string(received.Data)[:len(config.UDP_PRESENCE_MSG)] == config.UDP_PRESENCE_MSG {
-			Add_Active_Elev(received.Raddr)
+			ch_new_elev <- received.Raddr
 		} else {
 			var msg config.Message
 			err := json.Unmarshal(received.Data[len(config.MESSAGE_PREFIX):received.Length], &msg)

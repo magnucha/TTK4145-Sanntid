@@ -13,7 +13,7 @@ var Laddr = ""
 
 const MESSAGE_PREFIX = "Ey Billy!"
 
-const TIMEOUT = 3*time.Second // Flytte til utilities?
+const TIMEOUT = 5*time.Second // Flytte til utilities?
 
 type ButtonType int
 const (

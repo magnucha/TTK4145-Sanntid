@@ -30,13 +30,13 @@ func main() {
 	go hardware.Read_Buttons(ch_button_pressed)
 	go hardware.Set_Lights()
 	go hardware.Floor_Poller(ch_floor_poll)
+	go State_Spammer()
 	fsm.FSM_Init(ch_outgoing_msg)
 	
 	log.Printf("Elev addr: %s", config.Laddr)
 
 	for {
 		time.Sleep(5 * time.Second)
-
 	}
 
 }
@@ -49,6 +49,7 @@ func Message_Server() {
 		//	Increment_Ack_Counter(msg)	//Not yet implemented
 		case config.STATE_UPDATE:
 			*config.Active_elevs[msg.Raddr] = msg.State
+			//*config.Active_elevs[msg.Raddr].Timer.Reset(config.TIMEOUT) //Reset local timer at state spammer
 		case config.ADD_ORDER:
 			fsm.Event_Order_Received(msg.Button)
 		case config.DELETE_ORDER:
@@ -66,6 +67,14 @@ func Channel_Server() {
 		case floor := <-ch_floor_poll:
 			fsm.Event_Reached_Floor(floor, ch_outgoing_msg)
 		}
+	}
+}
+
+func State_Spammer(){
+	for{
+		ch_outgoing_msg <- config.Message{Msg_type: config.STATE_UPDATE, State: *config.Active_elevs[config.Laddr]} //Trenger vi sende elevs in network?
+		time.Sleep(500*time.Millisecond)
+		//config.Active_elevs[config.Laddr].Timer.Reset(config.TIMEOUT)
 	}
 }
 

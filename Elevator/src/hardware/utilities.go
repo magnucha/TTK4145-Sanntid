@@ -79,4 +79,3 @@ func Floor_Poller(ch_floor_poll chan<- int) {
 		}
 	}
 }
-

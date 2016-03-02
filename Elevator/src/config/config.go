@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 const NUM_FLOORS = 4
 const NUM_BUTTONS = 3
 const NUM_MAX_ELEVATORS = 4
@@ -10,6 +12,8 @@ const UDP_BROADCAST_PORT = ":20003"
 var Laddr = ""
 
 const MESSAGE_PREFIX = "Ey Billy!"
+
+const TIMEOUT = 3*time.Second // Flytte til utilities?
 
 type ButtonType int
 const (
@@ -30,6 +34,7 @@ type ElevState struct {
 	Door_open bool
 	Direction MotorDir //General direction, not always current
 	Last_floor int
+	Timer *time.Timer `json:"-"` //Each elevator got its own timer that resets when a STATE_UPDATE is received
 }
 
 type MessageType int

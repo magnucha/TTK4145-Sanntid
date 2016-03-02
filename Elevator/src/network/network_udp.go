@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net"
+	"time"
 )
 
 func Network_Init(ch_outgoing_msg <-chan config.Message, ch_incoming_msg chan<- config.Message) {
@@ -42,8 +43,11 @@ func Add_Active_Elev(raddr string) {
 			already_active = true
 		}
 	}
+	killer := func(){ //Poppiloppi-kode
+		delete(config.Active_elevs, raddr)
+	}
 	if !already_active {
-		config.Active_elevs[raddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: -1}
+		config.Active_elevs[raddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: -1, Timer: time.AfterFunc(config.TIMEOUT, killer)}
 	}
 }
 

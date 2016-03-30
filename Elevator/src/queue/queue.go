@@ -97,7 +97,11 @@ func Calculate(addr string, button config.ButtonStruct) int {
 	var cost int
 	elev := config.Active_elevs[addr]
 
-	if (elev.Direction == config.DIR_UP && button.Floor > elev.Last_floor) || (elev.Direction == config.DIR_DOWN && button.Floor < elev.Last_floor) || (elev.Direction == config.DIR_STOP) {
+	if elev.Is_idle {
+		return int(math.Abs(float64(elev.Last_floor - button.Floor)))
+	}
+
+	if (elev.Direction == config.DIR_UP && button.Floor > elev.Last_floor) || (elev.Direction == config.DIR_DOWN && button.Floor < elev.Last_floor) {
 		cost = int(math.Abs(float64(elev.Last_floor-button.Floor)) * COST_MOVE_ONE_FLOOR)
 		for f := elev.Last_floor; f != button.Floor; f += int(elev.Direction) {
 			cost += COST_STOP

@@ -8,6 +8,7 @@ procedure exercise8 is
 
     protected type Transaction_Manager (N : Positive) is
         entry Finished;
+        entry Wait_Until_Aborted;
         function Commit return Boolean;
         procedure Signal_Abort;
     private
@@ -18,18 +19,20 @@ procedure exercise8 is
     protected body Transaction_Manager is
         entry Finished when Finished_Gate_Open or Finished'Count = N is
         begin
-            ------------------------------------------
-            -- PART 3: Complete the exit protocol here
-            ------------------------------------------
-            Finished_Gate_Open := True;
+			Finished_Gate_Open := True;
             Should_Commit := not Aborted;
             if Finished'Count = 0 then
             	Finished_Gate_Open := False;
             	Aborted := False;
             end if;
-            
-            
         end Finished;
+        
+        entry Wait_Until_Aborted when Aborted is
+        begin
+        	if Wait_Until_Aborted'Count = 0 then 
+        		Aborted := false;
+        	end if;
+        end;
 
         procedure Signal_Abort is
         begin
@@ -76,31 +79,28 @@ procedure exercise8 is
         loop
             Put_Line ("Worker" & Integer'Image(Initial) & " started round" & Integer'Image(Round_Num));
             Round_Num := Round_Num + 1;
+
             ---------------------------------------
             -- PART 2: Do the transaction work here             
             ---------------------------------------
-            begin
-            Num := Unreliable_Slow_Add(Prev);
-            exception
-            	when Count_Failed =>
-            		Manager.Signal_Abort;
-            	when Error : others =>
-            		Put_Line ("A strange error occured...");
-            end;
-            Manager.Finished;  
-                     
-            
-            if Manager.Commit = True then
-                Put_Line ("  Worker" & Integer'Image(Initial) & " comitting" & Integer'Image(Num));
-            else
-                Put_Line ("  Worker" & Integer'Image(Initial) &
-                             " reverting from" & Integer'Image(Num) &
-                             " to" & Integer'Image(Prev));
-                -------------------------------------------
-                -- PART 2: Roll back to previous value here
-                -------------------------------------------
-               	Num := Prev;
-            end if;
+			select
+				Manager.Wait_Until_Aborted;   -- eg. X.Entry_Call;
+				Num := Prev + 5;
+				Put_Line ("  Worker" & Integer'Image(Initial) & " comitting" & Integer'Image(Num));
+				-- code that is run when the triggering_alternative has triggered
+				--   (forward ER code goes here)
+			then abort
+				begin
+		    		Num := Unreliable_Slow_Add(Prev);
+		    		Put_Line ("  Worker" & Integer'Image(Initial) & " comitting" & Integer'Image(Num));
+			    	exception
+    	        		when Count_Failed =>
+    	        			Manager.Signal_Abort;
+					-- code that is run when nothing has triggered
+					--   (main functionality)
+				end;
+				Manager.Finished;
+			end select;
 
             Prev := Num;
             delay 0.5;
@@ -116,5 +116,4 @@ procedure exercise8 is
 
 begin
     Reset(Gen); -- Seed the random number generator
-end exercise7;
-
+end exercise8;

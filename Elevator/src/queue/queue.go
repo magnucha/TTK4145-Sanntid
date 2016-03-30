@@ -106,7 +106,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 		for f := elev.Last_floor; f != button.Floor; f += int(elev.Direction) {
 			cost += COST_STOP
 		}
-	} else {
+	} else { //ERROR: Kommer inn her uten å komme inn i løkka under... FIKS!
 		cost = int(-math.Abs(float64(elev.Last_floor-button.Floor)) * COST_MOVE_ONE_FLOOR)
 	}
 

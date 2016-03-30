@@ -38,9 +38,9 @@ func main() {
 
 	for {
 		time.Sleep(3 * time.Second)
-		for _, elev := range config.Active_elevs {
-			log.Printf("Direction: %d, Num elevs: %d", elev.Direction, len(config.Active_elevs))
-		}
+		/*for _, elev := range config.Active_elevs {
+			log.Printf("Direction: %d, Num elevs: %d", elev.Last_floor, len(config.Active_elevs))
+		}*/
 	}
 
 }

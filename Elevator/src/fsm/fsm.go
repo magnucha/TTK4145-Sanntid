@@ -2,8 +2,9 @@ package fsm
 
 import (
 	"config"
-	"queue"
 	"hardware"
+	"log"
+	"queue"
 	"time"
 )
 
@@ -27,23 +28,25 @@ func Event_Reached_Floor(floor int, ch_outgoing_msg chan<- config.Message) {
 }
 
 func Event_Order_Received(button config.ButtonStruct) {
-	//Add a check for cost function when implemented
-	queue.Add_Order(button)
-	
-	if config.Local_elev.Door_open {
-		if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
-			queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing, true)
-			ch_open_door <- true
-		}
-	} else if config.Local_elev.Is_idle {
-		dir := Choose_New_Direction()
-		config.Local_elev.Direction = dir
-		hardware.Elev_Set_Motor_Direction(dir)
-		if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
-			ch_open_door <- true
-			queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing, true)
-		} else {
-			config.Local_elev.Is_idle = false
+	target := queue.Get_Optimal_Elev(button)
+	queue.Add_Order(button, target)
+
+	if target == config.Laddr {
+		if config.Local_elev.Door_open {
+			if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
+				queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing, true)
+				ch_open_door <- true
+			}
+		} else if config.Local_elev.Is_idle {
+			dir := Choose_New_Direction()
+			config.Local_elev.Direction = dir
+			hardware.Elev_Set_Motor_Direction(dir)
+			if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
+				ch_open_door <- true
+				queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing, true)
+			} else {
+				config.Local_elev.Is_idle = false
+			}
 		}
 	}
 }
@@ -56,8 +59,37 @@ func Event_Door_Closed() {
 	hardware.Elev_Set_Motor_Direction(dir)
 }
 
-func (elev *ElevState) Is_Moving_Toward(floor int) bool {
-	return (elev.Direction == config.DIR_UP && floor > elev.Last_floor) || (elev.Direction == config.DIR_DOWN && floor < elev.Last_floor);
+func Choose_New_Direction() config.MotorDir {
+	floor := config.Local_elev.Last_floor
+	dir := config.Local_elev.Direction
+	if queue.Is_Empty() {
+		return config.DIR_STOP
+	}
+	switch dir {
+	case config.DIR_UP:
+		if queue.Is_Order_Above(floor) {
+			return config.DIR_UP
+		} else {
+			return config.DIR_DOWN
+		}
+	case config.DIR_DOWN:
+		if queue.Is_Order_Below(floor) {
+			return config.DIR_DOWN
+		} else {
+			return config.DIR_UP
+		}
+	case config.DIR_STOP:
+		if queue.Is_Order_Above(floor) {
+			return config.DIR_UP
+		} else if queue.Is_Order_Below(floor) {
+			return config.DIR_DOWN
+		} else {
+			return config.DIR_STOP
+		}
+	default:
+		log.Fatal("Choose_Direction failed!")
+		return 0
+	}
 }
 
 func Open_Door(ch_open <-chan bool) {
@@ -65,7 +97,7 @@ func Open_Door(ch_open <-chan bool) {
 	timer := time.NewTimer(0)
 	timer.Stop()
 	for {
-		time.Sleep(100*time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		select {
 		case <-ch_open:
 			timer.Reset(duration)

@@ -2,12 +2,12 @@ package main
 
 import (
 	"config"
+	"fsm"
 	"hardware"
 	"log"
 	"network"
 	"queue"
 	"time"
-	"fsm"
 )
 
 var ch_incoming_msg = make(chan config.Message)
@@ -33,12 +33,12 @@ func main() {
 	go hardware.Floor_Poller(ch_floor_poll)
 	go State_Spammer()
 	fsm.FSM_Init(ch_outgoing_msg)
-	
+
 	log.Printf("Elev addr: %s", config.Laddr)
 
 	for {
 		time.Sleep(3 * time.Second)
-		for _, elev := range config.Active_elevs{
+		for _, elev := range config.Active_elevs {
 			log.Printf("Elev floors: %d, Num elevs: %d", elev.Last_floor, len(config.Active_elevs))
 		}
 	}
@@ -76,9 +76,9 @@ func Channel_Server() {
 	}
 }
 
-func State_Spammer(){
-	for{
-		time.Sleep(500*time.Millisecond)
+func State_Spammer() {
+	for {
+		time.Sleep(500 * time.Millisecond)
 		ch_outgoing_msg <- config.Message{Msg_type: config.STATE_UPDATE, State: *config.Active_elevs[config.Laddr]}
 	}
 }
@@ -89,7 +89,7 @@ func Set_Active(raddr string) {
 			return
 		}
 	}
-	killer := func(){
+	killer := func() {
 		delete(config.Active_elevs, raddr)
 		//Redistribute orders
 	}
@@ -101,39 +101,6 @@ func State_Copy(a *config.ElevState, b *config.ElevState) {
 	a.Door_open = b.Door_open
 	a.Direction = b.Direction
 	a.Last_floor = b.Last_floor
-}
-
-func Choose_New_Direction() config.MotorDir {
-	floor := config.Local_elev.Last_floor
-	dir := config.Local_elev.Direction
-	if Is_Empty() {
-		return config.DIR_STOP
-	}
-	switch dir {
-	case config.DIR_UP:
-		if Is_Order_Above(floor) {
-			return config.DIR_UP
-		} else {
-			return config.DIR_DOWN
-		}
-	case config.DIR_DOWN:
-		if Is_Order_Below(floor) {
-			return config.DIR_DOWN
-		} else {
-			return config.DIR_UP
-		}
-	case config.DIR_STOP:
-		if Is_Order_Above(floor) {
-			return config.DIR_UP
-		} else if Is_Order_Below(floor) {
-			return config.DIR_DOWN
-		} else {
-			return config.DIR_STOP
-		}
-	default:
-		log.Fatal("Choose_Direction failed!")
-		return 0
-	}
 }
 
 /*
@@ -149,18 +116,18 @@ Channel server:
 			- Continue to destination
 	- Completed order
 		- Broadcast DELETE_ORDER
-		
+
 
 Bestillingsutdeling:
 	- GetCost(Order, ElevState) int	//Returnerer cost til en bestilling for den gitte heisen
 	- AssignElev(Order)				//Finner beste heis, og setter Queue.Addr
 	- ReassignOrders(addr string) 	//Kaller AssignElev på alle bestillinger med addr=addr
-	
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
+
 */

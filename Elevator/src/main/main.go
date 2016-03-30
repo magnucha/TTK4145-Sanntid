@@ -39,7 +39,7 @@ func main() {
 	for {
 		time.Sleep(3 * time.Second)
 		for _, elev := range config.Active_elevs {
-			log.Printf("Elev floors: %d, Num elevs: %d", elev.Last_floor, len(config.Active_elevs))
+			log.Printf("Direction: %d, Num elevs: %d", elev.Direction, len(config.Active_elevs))
 		}
 	}
 
@@ -52,6 +52,17 @@ func Message_Server() {
 		//case config.ACK:
 		//	Increment_Ack_Counter(msg)	//Not yet implemented
 		case config.STATE_UPDATE:
+			already_active := false
+			for addr, _ := range config.Active_elevs {
+				if msg.Raddr == addr {
+					already_active = true
+					break
+				}
+			}
+			if !already_active {
+				ch_new_elev <- msg.Raddr
+				time.Sleep(10 * time.Microsecond)
+			}
 			State_Copy(config.Active_elevs[msg.Raddr], &msg.State)
 			config.Active_elevs[msg.Raddr].Timer.Reset(config.TIMEOUT)
 		case config.ADD_ORDER:

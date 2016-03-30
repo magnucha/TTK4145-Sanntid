@@ -2,8 +2,8 @@ package queue
 
 import (
 	"config"
+	"log"
 	"math"
-	//"log"
 )
 
 var Queue = [config.NUM_FLOORS][config.NUM_BUTTONS]config.Order{}
@@ -97,7 +97,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 	var cost int
 	elev := config.Active_elevs[addr]
 
-	if (elev.Direction == config.DIR_UP && button.Floor > elev.Last_floor) || (elev.Direction == config.DIR_DOWN && button.Floor < elev.Last_floor) {
+	if (elev.Direction == config.DIR_UP && button.Floor > elev.Last_floor) || (elev.Direction == config.DIR_DOWN && button.Floor < elev.Last_floor) || (elev.Direction == config.DIR_STOP) {
 		cost = int(math.Abs(float64(elev.Last_floor-button.Floor)) * COST_MOVE_ONE_FLOOR)
 		for f := elev.Last_floor; f != button.Floor; f += int(elev.Direction) {
 			cost += COST_STOP
@@ -128,6 +128,7 @@ func Get_Optimal_Elev(button config.ButtonStruct) string {
 	lowest := 100000
 	for addr, _ := range config.Active_elevs {
 		cost := Calculate(addr, button)
+		log.Printf("COST: Lowest=%d, Cost=%d, Addr=%s\n", lowest, cost, addr)
 		if cost < lowest {
 			optimal = addr
 			lowest = cost

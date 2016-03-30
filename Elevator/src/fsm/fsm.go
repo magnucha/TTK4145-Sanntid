@@ -36,7 +36,7 @@ func Event_Order_Received(button config.ButtonStruct) {
 			ch_open_door <- true
 		}
 	} else if config.Local_elev.Is_idle {
-		dir := queue.Choose_New_Direction()
+		dir := Choose_New_Direction()
 		config.Local_elev.Direction = dir
 		hardware.Elev_Set_Motor_Direction(dir)
 		if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
@@ -51,9 +51,13 @@ func Event_Order_Received(button config.ButtonStruct) {
 func Event_Door_Closed() {
 	config.Local_elev.Door_open = false
 	hardware.Elev_Set_Door_Open_Lamp(0)
-	dir := queue.Choose_New_Direction()
+	dir := Choose_New_Direction()
 	config.Local_elev.Direction = dir
 	hardware.Elev_Set_Motor_Direction(dir)
+}
+
+func (elev *ElevState) Is_Moving_Toward(floor int) bool {
+	return (elev.Direction == config.DIR_UP && floor > elev.Last_floor) || (elev.Direction == config.DIR_DOWN && floor < elev.Last_floor);
 }
 
 func Open_Door(ch_open <-chan bool) {

@@ -23,6 +23,10 @@ func Add_Order(button config.ButtonStruct) {
 	Queue[button.Floor][button.Button_type].Addr = "" //Use cost function when we get one(i.e. Assign_Order_To_Lift())
 }
 
+func Get_Order(button config.ButtonStruct) config.Order {
+	return Queue[button.Floor][button.Button_type];
+}
+
 func Should_Stop_On_Floor(floor int) bool {
 	/*
 	Stopp hvis:
@@ -82,37 +86,4 @@ func Is_Order_Below(floor int) bool {
 		}
 	}
 	return false
-}
-
-func Choose_New_Direction() config.MotorDir {
-	floor := config.Local_elev.Last_floor
-	dir := config.Local_elev.Direction
-	if Is_Empty() {
-		return config.DIR_STOP
-	}
-	switch dir {
-	case config.DIR_UP:
-		if Is_Order_Above(floor) {
-			return config.DIR_UP
-		} else {
-			return config.DIR_DOWN
-		}
-	case config.DIR_DOWN:
-		if Is_Order_Below(floor) {
-			return config.DIR_DOWN
-		} else {
-			return config.DIR_UP
-		}
-	case config.DIR_STOP:
-		if Is_Order_Above(floor) {
-			return config.DIR_UP
-		} else if Is_Order_Below(floor) {
-			return config.DIR_DOWN
-		} else {
-			return config.DIR_STOP
-		}
-	default:
-		log.Fatal("Choose_Direction failed!")
-		return 0
-	}
 }

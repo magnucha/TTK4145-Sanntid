@@ -52,7 +52,6 @@ func Message_Server() {
 		//case config.ACK:
 		//	Increment_Ack_Counter(msg)	//Not yet implemented
 		case config.STATE_UPDATE:
-			Set_Active(msg.Raddr)
 			State_Copy(config.Active_elevs[msg.Raddr], &msg.State)
 			config.Active_elevs[msg.Raddr].Timer.Reset(config.TIMEOUT)
 		case config.ADD_ORDER:
@@ -84,14 +83,13 @@ func State_Spammer(){
 	}
 }
 
-
 func Set_Active(raddr string) {
 	for addr, _ := range config.Active_elevs {
 		if addr == raddr {
 			return
 		}
 	}
-	killer := func(){ //Poppiloppi-kode
+	killer := func(){
 		delete(config.Active_elevs, raddr)
 		//Redistribute orders
 	}
@@ -103,6 +101,39 @@ func State_Copy(a *config.ElevState, b *config.ElevState) {
 	a.Door_open = b.Door_open
 	a.Direction = b.Direction
 	a.Last_floor = b.Last_floor
+}
+
+func Choose_New_Direction() config.MotorDir {
+	floor := config.Local_elev.Last_floor
+	dir := config.Local_elev.Direction
+	if Is_Empty() {
+		return config.DIR_STOP
+	}
+	switch dir {
+	case config.DIR_UP:
+		if Is_Order_Above(floor) {
+			return config.DIR_UP
+		} else {
+			return config.DIR_DOWN
+		}
+	case config.DIR_DOWN:
+		if Is_Order_Below(floor) {
+			return config.DIR_DOWN
+		} else {
+			return config.DIR_UP
+		}
+	case config.DIR_STOP:
+		if Is_Order_Above(floor) {
+			return config.DIR_UP
+		} else if Is_Order_Below(floor) {
+			return config.DIR_DOWN
+		} else {
+			return config.DIR_STOP
+		}
+	default:
+		log.Fatal("Choose_Direction failed!")
+		return 0
+	}
 }
 
 /*

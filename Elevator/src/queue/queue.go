@@ -104,6 +104,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 	if (elev.Direction == config.DIR_UP && button.Floor > elev.Last_floor) || (elev.Direction == config.DIR_DOWN && button.Floor < elev.Last_floor) {
 		cost = int(math.Abs(float64(elev.Last_floor-button.Floor)) * COST_MOVE_ONE_FLOOR)
 		for f := elev.Last_floor; f != button.Floor; f += int(elev.Direction) {
+			//Kun hvis den faktisk skal stoppe? Typ should_stop_on_floor(floor, elev)
 			cost += COST_STOP
 		}
 	} else { //ERROR: Kommer inn her uten å komme inn i løkka under... FIKS!
@@ -122,6 +123,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 				}
 			}
 		}
+		//Hva med de den skal stoppe på på veien forbi?
 		cost += int(math.Abs(float64(furthest_floor-button.Floor)) * COST_MOVE_ONE_FLOOR * 2)
 	}
 	return cost

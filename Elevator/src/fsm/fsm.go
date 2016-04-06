@@ -31,8 +31,14 @@ func Event_Reached_Floor(floor int, ch_outgoing_msg chan<- config.Message) {
 
 func Event_Order_Received() {
 	for {
+		log.Printf("Event_Order_Received")
 		button := <- ch_order_received
-		target := queue.Get_Optimal_Elev(button)
+		var target string
+		if (button.Button_type == config.BUTTON_COMMAND) {
+			target = config.Laddr 
+		} else {
+			target = queue.Get_Optimal_Elev(button)
+		}
 		queue.Add_Order(button, target)
 
 		if target == config.Laddr {

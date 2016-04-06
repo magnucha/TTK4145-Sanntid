@@ -14,7 +14,7 @@ var Laddr = ""
 const MESSAGE_PREFIX = "Ey Billy!"
 
 const TIMEOUT_REMOTE = 3*time.Second
-const TIMEOUT_LOCAL = 1.5*time.Second
+const TIMEOUT_LOCAL = 2*time.Second
 
 type ButtonType int
 const (

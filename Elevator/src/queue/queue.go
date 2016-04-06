@@ -4,8 +4,8 @@ import (
 	"config"
 	"log"
 	"math"
-	"os/file"
-	"json"
+	"os"
+	"encoding/json"
 	"io"
 )
 
@@ -95,7 +95,7 @@ func Reassign_Orders(addr string, ch_new_order chan<- config.ButtonStruct) {
 	for floor := 0; floor < config.NUM_FLOORS; floor++ {
 		for button := 0; button < config.NUM_BUTTONS; button++ {
 			if Queue[floor][button].Addr == addr {
-				ch_new_order <- config.ButtonStruct{button, floor}
+				ch_new_order <- config.ButtonStruct{config.ButtonType(button), floor}
 			}
 		}
 	}
@@ -109,7 +109,7 @@ func File_Read(file *os.File) {
 		log.Printf("ERROR: Could not read queue from file! error: %s", err)
 		return
 	}
-	err := json.Unmarshal(input[:n_bytes], &Queue)
+	err = json.Unmarshal(input[:n_bytes], &Queue)
 	if err != nil {
 		//Test contents of Queue! Is fatal needed?
 		log.Fatal("FATAL: Could not decode file input! json error: %s", err)
@@ -121,7 +121,7 @@ func File_Write(file *os.File) {
 	if err != nil {
 		log.Printf("ERROR: Could not encode queue! json error: %s", err)
 	}
-	_,err := file.os.Write(output)
+	_,err = file.Write(output)
 	if err != nil {
 		log.Printf("ERROR: Coult not write queue to file! error: %s", err)
 	}
@@ -129,17 +129,40 @@ func File_Write(file *os.File) {
 //-----------------------------------------------------
 func Calculate(addr string, button config.ButtonStruct) int {
 	const COST_MOVE_ONE_FLOOR = 1
-	const COST_DOOR_OPEN = 2
-	const COST_STOP = 3
-	var cost int
+	const COST_DOOR_OPEN = 1
+	const COST_STOP = 2
 	elev := config.Active_elevs[addr]
 
-	if elev.Is_idle {
-		return int(math.Abs(float64(elev.Last_floor - button.Floor)))
-	}
+	cost := int(math.Abs(float64(elev.Last_floor - button.Floor))) * COST_MOVE_ONE_FLOOR
 
+	//Moving towards destination floor
 	if (elev.Direction == config.DIR_UP && button.Floor > elev.Last_floor) || (elev.Direction == config.DIR_DOWN && button.Floor < elev.Last_floor) {
-		cost = int(math.Abs(float64(elev.Last_floor-button.Floor)) * COST_MOVE_ONE_FLOOR)
+		for f := elev.Last_floor; f != button.Floor; f += int(elev.Direction) {
+			for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
+				if Get_Order(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
+					cost += COST_STOP
+					break
+				}
+			}
+		}
+		//Should pass the floor before serving it
+		if (elev.Direction == config.DIR_UP && button.Button_type == config.BUTTON_CALL_DOWN) || (elev.Direction == config.DIR_DOWN && button.Button_type == config.BUTTON_CALL_UP) {
+			furthest_floor := -1
+			for f := button.Floor; f >= 0 && f < config.NUM_FLOORS; f += int(elev.Direction) {
+				for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
+					if Get_Order(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
+						furthest_floor = f
+						cost += COST_STOP
+						break
+					}
+				}
+			}
+			cost += int(math.Abs(float64(furthest_floor - button.Floor))) * COST_MOVE_ONE_FLOOR * 2
+		}
+	} else if !elev.Is_idle {
+		
+	}
+		
 		for f := elev.Last_floor; f != button.Floor; f += int(elev.Direction) {
 			if(Should_Stop_On_Floor(f)){	//FUNKER KUN FOR LOCAL ELEV!!!!
 				cost += COST_STOP
@@ -183,3 +206,32 @@ func Get_Optimal_Elev(button config.ButtonStruct) string {
 	}
 	return optimal
 }
+
+func Cost_Calculate(addr string, button config.ButtonStruct) int {
+	const COST_MOVE_ONE_FLOOR = 1
+	const COST_DOOR_OPEN = 2
+	const COST_STOP = 3
+	var cost int
+	elev := config.Active_elevs[addr]
+
+	if elev.Is_idle {
+		return int(math.Abs(float64(elev.Last_floor - button.Floor)))
+	}
+
+
+
+}
+
+
+/*
+	- Idle
+		- Abs avstand
+	- På vei mot etasjen, plukker opp på veien
+		- Abs avstand + stopp
+	- På vei mot etasjen, skal passere
+		- Abs avstand + 2*passeravstand + stopp
+	- På vei vekk fra etasjen
+		- 2*avstand til furthest + abs avstand + stopp
+
+
+*/

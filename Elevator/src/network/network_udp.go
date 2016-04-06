@@ -49,15 +49,20 @@ func Encode_And_Forward_Transmission(ch_transmit chan<- []byte, ch_outgoing_msg 
 func Decode_And_Forward_Reception(ch_new_elev chan<- string, ch_received <-chan config.NetworkMessage, ch_incoming_msg chan<- config.Message, ch_main_alive chan<- bool) {
 	for {
 		received := <-ch_received
+		if string(received.Data[:len(config.MESSAGE_PREFIX)]) != config.MESSAGE_PREFIX {
+			continue
+		}
+
 		if string(received.Data)[:len(config.UDP_PRESENCE_MSG)] == config.UDP_PRESENCE_MSG {
 			ch_new_elev <- received.Raddr
 		} else if received.Raddr == config.Laddr {
-			ch_main_alive <- true
+			continue
+		//	ch_main_alive <- true
 		} else {
 			var msg config.Message
 			err := json.Unmarshal(received.Data[len(config.MESSAGE_PREFIX):received.Length], &msg)
 			if err != nil {
-				log.Printf("TCP_Decode_And_Forward_Reception: json error:", err)
+				log.Printf("UDP_Decode_And_Forward_Reception: json error:", err)
 			}
 			msg.Raddr = received.Raddr
 			ch_incoming_msg <- msg

@@ -8,7 +8,8 @@ import (
 	"network"
 	"queue"
 	"time"
-	"os"
+	//"os"
+	//"os/exec"
 )
 
 var ch_incoming_msg = make(chan config.Message)
@@ -22,9 +23,9 @@ var ch_main_alive = make(chan bool)
 
 func main() {
 	network.Init(ch_outgoing_msg, ch_incoming_msg, ch_new_elev, ch_main_alive)
-	if queue_file,err := os.Open("Elev_Queue.txt"); err == nil {
+	/*if queue_file,err := os.Open("Elev_Queue.txt"); err == nil {
 		Backup_Hold()
-		queue.Read_File(queue_file)
+		queue.File_Read(queue_file)
 	} else {
 		if !hardware.Elev_Init() {
 			log.Fatal("Unable to initialize elevator hardware!")
@@ -33,15 +34,20 @@ func main() {
 			log.Fatal("FATAL: Could not create queue file!")
 		}
 	}
-	backup := exec.Command("gnome-terminal", "-x", "sh", "-c", "go run main.go")
+	backup := exec.Command("gnome-terminal", "-x", "sh", "-c", "go run main/main.go")
 	backup.Run()
-
+*/
+	time.Sleep(time.Millisecond)
+	if !hardware.Elev_Init() {
+		log.Fatal("Unable to initialize elevator hardware!")
+	}
 	go Message_Server()
 	go Channel_Server()
 	go hardware.Read_Buttons(ch_button_pressed)
 	go hardware.Set_Lights()
 	go hardware.Floor_Poller(ch_floor_poll)
 	go State_Spammer()
+	go fsm.Event_Order_Received()
 	fsm.Init(ch_outgoing_msg, ch_new_order)
 
 	log.Printf("Elev addr: %s", config.Laddr)
@@ -86,7 +92,7 @@ func Channel_Server() {
 		select {
 		case button := <-ch_button_pressed:
 			ch_outgoing_msg <- config.Message{Msg_type: config.ADD_ORDER, Button: button}
-			fsm.Event_Order_Received(button)
+			ch_new_order <- button
 		case floor := <-ch_floor_poll:
 			fsm.Event_Reached_Floor(floor, ch_outgoing_msg)
 		case raddr := <-ch_new_elev:
@@ -110,7 +116,7 @@ func Set_Active(raddr string) {
 	}
 	killer := func() {
 		delete(config.Active_elevs, raddr)
-		ReassignOrders(raddr, ch_new_order)
+		queue.Reassign_Orders(raddr, ch_new_order)
 	}
 	config.Active_elevs[raddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: -1, Timer: time.AfterFunc(config.TIMEOUT_REMOTE, killer)}
 }
@@ -127,8 +133,8 @@ func Backup_Hold() {
 	for {
 		select {
 		case <- ch_main_alive:
-			timer_alive.Reset()
-		case <- timer_alive.C
+			timer_alive.Reset(config.TIMEOUT_LOCAL)
+		case <- timer_alive.C:
 			return
 		}
 		time.Sleep(100*time.Millisecond)

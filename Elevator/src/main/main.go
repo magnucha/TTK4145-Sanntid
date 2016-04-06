@@ -90,8 +90,10 @@ func Channel_Server() {
 	for {
 		select {
 		case button := <-ch_button_pressed:
-			ch_outgoing_msg <- config.Message{Msg_type: config.ADD_ORDER, Button: button}
 			ch_new_order <- button
+			if button.Button_type != config.BUTTON_COMMAND {
+				ch_outgoing_msg <- config.Message{Msg_type: config.ADD_ORDER, Button: button}
+			}
 		case floor := <-ch_floor_poll:
 			fsm.Event_Reached_Floor(floor)
 		case raddr := <-ch_new_elev:

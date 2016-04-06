@@ -2,38 +2,9 @@ package hardware
 
 import (
 	"config"
-	//"log"
 	"queue"
 	"time"
 )
-
-//Check for orders in same direction as the floor you're passing
-/*func Passing_Floor(floor int, dir config.MotorDir){
-
-	var button config.ButtonType
-	if(dir == config.DIR_UP){
-		button = config.BUTTON_CALL_UP
-	} else{
-		button = config.BUTTON_CALL_DOWN
-	}
-
-	if(queue.Queue[floor][button].Addr == config.Laddr && queue.Queue[floor][button].Active){
-		Stop_On_Floor(dir)
-		queue.Delete_Order(floor, button)
-	}
-}
-*/
-// func Change_Destination(floor int) {
-// 	config.Local_elev.Is_idle = false //Pella vekk
-
-// 	if config.Local_elev.Last_floor < floor {
-// 		config.Local_elev.Direction = config.DIR_UP
-// 	} else if config.Local_elev.Last_floor == floor {
-// 		config.Local_elev.Direction = config.DIR_STOP
-// 	} else {
-// 		config.Local_elev.Direction = config.DIR_DOWN
-// 	}
-// }
 
 func Read_Buttons(ch_button_polling chan<- config.ButtonStruct) {
 	var last_floor [config.NUM_BUTTONS][config.NUM_FLOORS]int

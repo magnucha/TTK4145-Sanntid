@@ -33,6 +33,9 @@ func Add_Order(button config.ButtonStruct, addr string) {
 }
 
 func Get_Order(button config.ButtonStruct) Order {
+	if (button.Floor < 0 || button.Floor > 3) {
+		log.Fatal("FATAL: Get_Order floor out of range! Floor is", button.Floor)
+	}
 	return Queue[button.Floor][button.Button_type]
 }
 
@@ -127,6 +130,16 @@ func File_Write(file *os.File) {
 	}
 }
 //-----------------------------------------------------
+/*
+	- Idle
+		- Abs avstand
+	- På vei mot etasjen, plukker opp på veien
+		- Abs avstand + stopp
+	- På vei mot etasjen, skal passere
+		- Abs avstand + 2*passeravstand + stopp
+	- På vei vekk fra etasjen
+		- 2*avstand til furthest + abs avstand + stopp
+*/
 func Calculate(addr string, button config.ButtonStruct) int {
 	const COST_MOVE_ONE_FLOOR = 1
 	const COST_DOOR_OPEN = 1
@@ -137,6 +150,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 
 	//Moving towards destination floor
 	if (elev.Direction == config.DIR_UP && button.Floor > elev.Last_floor) || (elev.Direction == config.DIR_DOWN && button.Floor < elev.Last_floor) {
+		log.Println("Case 1: cost=%d", cost)
 		for f := elev.Last_floor; f != button.Floor; f += int(elev.Direction) {
 			for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
 				if Get_Order(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
@@ -147,8 +161,9 @@ func Calculate(addr string, button config.ButtonStruct) int {
 		}
 		//Should pass the floor before serving it
 		if (elev.Direction == config.DIR_UP && button.Button_type == config.BUTTON_CALL_DOWN) || (elev.Direction == config.DIR_DOWN && button.Button_type == config.BUTTON_CALL_UP) {
-			furthest_floor := -1
-			for f := button.Floor; f >= 0 && f < config.NUM_FLOORS; f += int(elev.Direction) {
+			log.Println("Case 2: cost=%d", cost)
+			furthest_floor := button.Floor
+			for f := button.Floor + int(elev.Direction); f >= 0 && f < config.NUM_FLOORS; f += int(elev.Direction) {
 				for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
 					if Get_Order(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
 						furthest_floor = f
@@ -159,23 +174,11 @@ func Calculate(addr string, button config.ButtonStruct) int {
 			}
 			cost += int(math.Abs(float64(furthest_floor - button.Floor))) * COST_MOVE_ONE_FLOOR * 2
 		}
+	//Is moving away from destination floor
 	} else if !elev.Is_idle {
-		
-	}
-		
-		for f := elev.Last_floor; f != button.Floor; f += int(elev.Direction) {
-			if(Should_Stop_On_Floor(f)){	//FUNKER KUN FOR LOCAL ELEV!!!!
-				cost += COST_STOP
-			}
-		}
-	} else {
-		cost = int(-math.Abs(float64(elev.Last_floor-button.Floor)) * COST_MOVE_ONE_FLOOR)
-	}
-
-	//Calculate cost of activities if we pass the floor without stopping (order in opposite direction)
-	if (button.Button_type == config.BUTTON_CALL_UP && elev.Direction == config.DIR_DOWN) || (button.Button_type == config.BUTTON_CALL_DOWN && elev.Direction == config.DIR_UP) {
+		log.Println("Case 3: cost=%d", cost)
 		furthest_floor := -1
-		for f := button.Floor; f >= 0 && f < config.NUM_FLOORS; f += int(elev.Direction) {
+		for f := elev.Last_floor; f >= 0 && f < config.NUM_FLOORS; f += int(elev.Direction) {
 			for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
 				if Get_Order(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
 					furthest_floor = f
@@ -184,7 +187,16 @@ func Calculate(addr string, button config.ButtonStruct) int {
 				}
 			}
 		}
-		cost += int(math.Abs(float64(furthest_floor-button.Floor)) * COST_MOVE_ONE_FLOOR * 2)
+		cost += int(math.Abs(float64(furthest_floor - elev.Last_floor))) * COST_MOVE_ONE_FLOOR * 2
+
+		for f := elev.Last_floor; f != button.Floor; f -= int(elev.Direction) {
+			for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
+				if Get_Order(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
+					cost += COST_STOP
+					break
+				}
+			}
+		}
 	}
 	return cost
 }
@@ -206,32 +218,3 @@ func Get_Optimal_Elev(button config.ButtonStruct) string {
 	}
 	return optimal
 }
-
-func Cost_Calculate(addr string, button config.ButtonStruct) int {
-	const COST_MOVE_ONE_FLOOR = 1
-	const COST_DOOR_OPEN = 2
-	const COST_STOP = 3
-	var cost int
-	elev := config.Active_elevs[addr]
-
-	if elev.Is_idle {
-		return int(math.Abs(float64(elev.Last_floor - button.Floor)))
-	}
-
-
-
-}
-
-
-/*
-	- Idle
-		- Abs avstand
-	- På vei mot etasjen, plukker opp på veien
-		- Abs avstand + stopp
-	- På vei mot etasjen, skal passere
-		- Abs avstand + 2*passeravstand + stopp
-	- På vei vekk fra etasjen
-		- 2*avstand til furthest + abs avstand + stopp
-
-
-*/

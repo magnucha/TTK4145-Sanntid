@@ -82,6 +82,7 @@ func Message_Server() {
 			ch_new_order <- msg.Button
 			//fsm.Event_Order_Received(msg.Button)
 		case config.DELETE_ORDER:
+			log.Println("Remote delete order received")
 			queue.Delete_Order(msg.Button.Floor, ch_outgoing_msg, false)
 		}
 	}

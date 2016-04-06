@@ -41,18 +41,22 @@ func Event_Order_Received() {
 		}
 		queue.Add_Order(button, target)
 
+
 		if target == config.Laddr {
 			if config.Local_elev.Door_open {
 				if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
-					queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing, true)
 					ch_open_door <- true
+					time.Sleep(time.Millisecond)
+					queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing, true)
 				}
 			} else if config.Local_elev.Is_idle {
+				log.Println("ELEV IDLE")
 				dir := Choose_New_Direction()
 				config.Local_elev.Direction = dir
 				hardware.Elev_Set_Motor_Direction(dir)
 				if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
 					ch_open_door <- true
+					time.Sleep(time.Millisecond)
 					queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing, true)
 				} else {
 					config.Local_elev.Is_idle = false

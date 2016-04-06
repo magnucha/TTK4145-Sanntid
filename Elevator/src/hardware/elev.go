@@ -3,7 +3,6 @@ package hardware
 import (
 	"config"
 	"log"
-	//"time"
 )
 
 const MOTOR_SPEED = 2800
@@ -24,7 +23,6 @@ var Button_channel_matrix = [config.NUM_FLOORS][config.NUM_BUTTONS]int{
 
 func Elev_Init() bool {
 	if !IO_Init() {
-		//log.Printf("Unable to initialize elevator hardware!")
 		return false
 	}
 

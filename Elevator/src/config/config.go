@@ -6,15 +6,18 @@ const NUM_FLOORS = 4
 const NUM_BUTTONS = 3
 const NUM_MAX_ELEVATORS = 4
 
+const QUEUE_FILENAME = "q.txt"
+
 const UDP_PRESENCE_MSG = "Pella"
 const UDP_BROADCAST_ADDR = "129.241.187.255"
 const UDP_BROADCAST_PORT = ":20003"
+const UDP_ALIVE_PORT = ":20103"
 var Laddr = ""
 
 const MESSAGE_PREFIX = "Ey Billy!"
 
 const TIMEOUT_REMOTE = 3*time.Second
-const TIMEOUT_LOCAL = 2*time.Second
+const TIMEOUT_LOCAL = time.Second
 
 type ButtonType int
 const (

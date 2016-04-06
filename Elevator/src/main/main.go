@@ -8,8 +8,8 @@ import (
 	"network"
 	"queue"
 	"time"
-	//"os"
-	//"os/exec"
+	"os"
+	"os/exec"
 )
 
 var ch_incoming_msg = make(chan config.Message)
@@ -22,25 +22,24 @@ var ch_new_elev = make(chan string)
 var ch_main_alive = make(chan bool)
 
 func main() {
-	network.Init(ch_outgoing_msg, ch_incoming_msg, ch_new_elev, ch_main_alive)
-	/*if queue_file,err := os.Open("Elev_Queue.txt"); err == nil {
+	if _,err := os.Open(config.QUEUE_FILENAME); err == nil {
 		Backup_Hold()
-		queue.File_Read(queue_file)
+		queue.File_Read(config.QUEUE_FILENAME)
+		network.Init(ch_outgoing_msg, ch_incoming_msg, ch_new_elev, ch_main_alive)
 	} else {
-		if !hardware.Elev_Init() {
-			log.Fatal("Unable to initialize elevator hardware!")
-		}
-		if _,err := os.Create("Elev_Queue.txt"); err != nil {
+		network.Init(ch_outgoing_msg, ch_incoming_msg, ch_new_elev, ch_main_alive)
+		time.Sleep(time.Millisecond)
+		if _,err := os.Create(config.QUEUE_FILENAME); err != nil {
 			log.Fatal("FATAL: Could not create queue file!")
 		}
 	}
 	backup := exec.Command("gnome-terminal", "-x", "sh", "-c", "go run main/main.go")
 	backup.Run()
-*/
-	time.Sleep(time.Millisecond)
+
 	if !hardware.Elev_Init() {
 		log.Fatal("Unable to initialize elevator hardware!")
 	}
+	hardware.Elev_Set_Motor_Direction(fsm.Choose_New_Direction())
 	go Message_Server()
 	go Channel_Server()
 	go hardware.Read_Buttons(ch_button_pressed)
@@ -80,7 +79,6 @@ func Message_Server() {
 			config.Active_elevs[msg.Raddr].Timer.Reset(config.TIMEOUT_REMOTE)
 		case config.ADD_ORDER:
 			ch_new_order <- msg.Button
-			//fsm.Event_Order_Received(msg.Button)
 		case config.DELETE_ORDER:
 			log.Println("Remote delete order received")
 			queue.Delete_Order(msg.Button.Floor, ch_outgoing_msg, false)
@@ -95,7 +93,7 @@ func Channel_Server() {
 			ch_outgoing_msg <- config.Message{Msg_type: config.ADD_ORDER, Button: button}
 			ch_new_order <- button
 		case floor := <-ch_floor_poll:
-			fsm.Event_Reached_Floor(floor, ch_outgoing_msg)
+			fsm.Event_Reached_Floor(floor)
 		case raddr := <-ch_new_elev:
 			Set_Active(raddr)
 		}
@@ -130,11 +128,18 @@ func State_Copy(a *config.ElevState, b *config.ElevState) {
 }
 
 func Backup_Hold() {
+	var ch_reset = make(chan config.NetworkMessage)
 	timer_alive := time.NewTimer(config.TIMEOUT_LOCAL)
+	conn := network.UDP_Create_Listen_Socket(config.UDP_ALIVE_PORT)
+	defer conn.Close()
+	go network.UDP_Receive(conn, ch_reset)
+	
 	for {
 		select {
-		case <- ch_main_alive:
-			timer_alive.Reset(config.TIMEOUT_LOCAL)
+		case msg := <- ch_reset:
+			if string(msg.Data[:len(config.UDP_PRESENCE_MSG)]) == config.UDP_PRESENCE_MSG {
+				timer_alive.Reset(config.TIMEOUT_LOCAL)
+			}
 		case <- timer_alive.C:
 			return
 		}

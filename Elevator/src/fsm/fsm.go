@@ -18,7 +18,7 @@ func Init(ch_outgoing_msg chan<- config.Message, ch_new_order <-chan config.Butt
 	go Open_Door(ch_open_door)
 }
 
-func Event_Reached_Floor(floor int, ch_outgoing_msg chan<- config.Message) {
+func Event_Reached_Floor(floor int) {
 	config.Local_elev.Last_floor = floor
 	hardware.Elev_Set_Floor_Indicator(floor)
 	if queue.Should_Stop_On_Floor(floor) {

@@ -14,9 +14,11 @@ func Init(ch_outgoing_msg <-chan config.Message, ch_incoming_msg chan<- config.M
 	UDP_broadcast_socket := UDP_Create_Send_Socket(config.UDP_BROADCAST_ADDR + config.UDP_BROADCAST_PORT)
 	UDP_listen_socket := UDP_Create_Listen_Socket(config.UDP_BROADCAST_PORT)
 	Store_Local_Addr()
+	UDP_alive_socket := UDP_Create_Send_Socket(config.Laddr + config.UDP_ALIVE_PORT)
 
 	//We choose to begin receiving UDP after broadcast to avoid creating a connection to ourselves
 	go UDP_Send(UDP_broadcast_socket, ch_UDP_transmit)
+	go UDP_Alive_Spam(UDP_alive_socket)
 	UDP_Broadcast_Presence(UDP_broadcast_socket, ch_UDP_transmit)
 	go UDP_Receive(UDP_listen_socket, ch_UDP_received)
 

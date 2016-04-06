@@ -4,9 +4,10 @@ import (
 	"config"
 	"log"
 	"math"
-	"os"
+	//"os"
 	"encoding/json"
-	"io"
+	//"io"
+	"io/ioutil"
 )
 
 type Order struct{
@@ -25,11 +26,13 @@ func Delete_Order(floor int, ch_outgoing_msg chan<- config.Message, call_is_loca
 	if call_is_local {
 		ch_outgoing_msg <- config.Message{Msg_type: config.DELETE_ORDER, Button: config.ButtonStruct{Floor: floor}}
 	}
+	File_Write(config.QUEUE_FILENAME)
 }
 
 func Add_Order(button config.ButtonStruct, addr string) {
 	Queue[button.Floor][button.Button_type].Active = true
 	Queue[button.Floor][button.Button_type].Addr = addr
+	File_Write(config.QUEUE_FILENAME)
 }
 
 func Get_Order(button config.ButtonStruct) Order {
@@ -104,29 +107,27 @@ func Reassign_Orders(addr string, ch_new_order chan<- config.ButtonStruct) {
 	}
 }
 
-func File_Read(file *os.File) {
-	input := make([]byte, 1024)
-	n_bytes, err := file.Read(input)
-	log.Printf("N_bytes: %d", n_bytes)
-	if err != io.EOF {
-		log.Printf("ERROR: Could not read queue from file! error: %s", err)
+func File_Read(filename string) {
+	input, err := ioutil.ReadFile(filename)
+	if err != nil {
+		log.Printf("ERROR: Could not read queue from file! error: %s", err.Error())
 		return
 	}
-	err = json.Unmarshal(input[:n_bytes], &Queue)
+	err = json.Unmarshal(input, &Queue)
 	if err != nil {
 		//Test contents of Queue! Is fatal needed?
-		log.Fatal("FATAL: Could not decode file input! json error: %s", err)
+		log.Fatal("FATAL: Could not decode file input! json error: %s", err.Error())
 	}
 }
 
-func File_Write(file *os.File) {
+func File_Write(filename string) {
 	output, err := json.Marshal(Queue)
 	if err != nil {
-		log.Printf("ERROR: Could not encode queue! json error: %s", err)
+		log.Printf("ERROR: Could not encode queue! json error: %s", err.Error())
 	}
-	_,err = file.Write(output)
+	err = ioutil.WriteFile(filename, output, 0666)
 	if err != nil {
-		log.Printf("ERROR: Coult not write queue to file! error: %s", err)
+		log.Printf("ERROR: Coult not write queue to file! error: %s", err.Error())
 	}
 }
 //-----------------------------------------------------
@@ -150,7 +151,6 @@ func Calculate(addr string, button config.ButtonStruct) int {
 
 	//Moving towards destination floor
 	if (elev.Direction == config.DIR_UP && button.Floor > elev.Last_floor) || (elev.Direction == config.DIR_DOWN && button.Floor < elev.Last_floor) {
-		log.Println("Case 1: cost=%d", cost)
 		for f := elev.Last_floor; f != button.Floor; f += int(elev.Direction) {
 			for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
 				if Get_Order(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
@@ -161,7 +161,6 @@ func Calculate(addr string, button config.ButtonStruct) int {
 		}
 		//Should pass the floor before serving it
 		if (elev.Direction == config.DIR_UP && button.Button_type == config.BUTTON_CALL_DOWN) || (elev.Direction == config.DIR_DOWN && button.Button_type == config.BUTTON_CALL_UP) {
-			log.Println("Case 2: cost=%d", cost)
 			furthest_floor := button.Floor
 			for f := button.Floor + int(elev.Direction); f >= 0 && f < config.NUM_FLOORS; f += int(elev.Direction) {
 				for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
@@ -176,7 +175,6 @@ func Calculate(addr string, button config.ButtonStruct) int {
 		}
 	//Is moving away from destination floor
 	} else if !elev.Is_idle {
-		log.Println("Case 3: cost=%d", cost)
 		furthest_floor := -1
 		for f := elev.Last_floor; f >= 0 && f < config.NUM_FLOORS; f += int(elev.Direction) {
 			for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {

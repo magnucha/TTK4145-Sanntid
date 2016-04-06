@@ -34,9 +34,9 @@ func UDP_Create_Listen_Socket(port string) *net.UDPConn {
 }
 
 func UDP_Broadcast_Presence(conn *net.UDPConn, ch_transmit chan []byte) {
-	for i:=0; i<1; i++ {
+	for i:=0; i<3; i++ {
 		ch_transmit <- []byte(config.UDP_PRESENCE_MSG)
-		time.Sleep(100*time.Millisecond)
+		time.Sleep(time.Millisecond)
 	}
 }
 
@@ -51,10 +51,27 @@ func UDP_Send(conn *net.UDPConn, ch_transmit <-chan []byte){
 }
 
 func UDP_Receive(conn *net.UDPConn, ch_received chan<- config.NetworkMessage) {
+	msg := make([]byte, 1024)
 	for {
-		msg := make([]byte, 1024)
-		length, raddr, _ := conn.ReadFromUDP(msg)
+		length, raddr, err := conn.ReadFromUDP(msg)
+		if err != nil{
+			log.Printf("UDP read error: %s", err.Error())
+			return
+		}
 		received_msg := config.NetworkMessage{Raddr: raddr.IP.String(), Data: msg, Length: length}
 		ch_received <- received_msg
+	}
+}
+
+func UDP_Alive_Spam(conn *net.UDPConn) {
+	time.Sleep(2*time.Second)
+	for {
+		msg := config.UDP_PRESENCE_MSG
+		_, err := conn.Write([]byte(msg))
+		if err != nil{
+			log.Printf("UDP alive error: %s", err.Error())
+			return
+		}
+		time.Sleep(200*time.Millisecond)
 	}
 }

@@ -104,7 +104,7 @@ func Channel_Server() {
 
 func State_Spammer() {
 	for {
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
 		ch_outgoing_msg <- config.Message{Msg_type: config.STATE_UPDATE, State: *config.Active_elevs[config.Laddr]}
 	}
 }

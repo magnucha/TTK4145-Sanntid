@@ -4,9 +4,17 @@ import (
 	"config"
 	"log"
 	"math"
+	"os/file"
+	"json"
+	"io"
 )
 
-var Queue = [config.NUM_FLOORS][config.NUM_BUTTONS]config.Order{}
+type Order struct{
+	Active bool; 						//Is this button pressed?
+	Addr string; 						//Which elevator executes this order
+}
+
+var Queue = [config.NUM_FLOORS][config.NUM_BUTTONS]Order{}
 
 //Assume everyone enters when we stop --> delete all orders on the floor
 func Delete_Order(floor int, ch_outgoing_msg chan<- config.Message, call_is_local bool) {
@@ -24,17 +32,11 @@ func Add_Order(button config.ButtonStruct, addr string) {
 	Queue[button.Floor][button.Button_type].Addr = addr
 }
 
-func Get_Order(button config.ButtonStruct) config.Order {
+func Get_Order(button config.ButtonStruct) Order {
 	return Queue[button.Floor][button.Button_type]
 }
 
 func Should_Stop_On_Floor(floor int) bool {
-	/*
-		Stopp hvis:
-			1) Øverst eller nederst
-			2) Ingen bestillinger lenger i samme retning (Dekker egentlig 1)
-			3) Command || Call i samme retning
-	*/
 	dir := config.Local_elev.Direction
 
 	if dir == config.DIR_UP && !Is_Order_Above(floor) {
@@ -89,6 +91,41 @@ func Is_Order_Below(floor int) bool {
 	return false
 }
 
+func Reassign_Orders(addr string, ch_new_order chan<- config.ButtonStruct) {
+	for floor := 0; floor < config.NUM_FLOORS; floor++ {
+		for button := 0; button < config.NUM_BUTTONS; button++ {
+			if Queue[floor][button].Addr == addr {
+				ch_new_order <- config.ButtonStruct{button, floor}
+			}
+		}
+	}
+}
+
+func File_Read(file *os.File) {
+	input := make([]byte, 1024)
+	n_bytes, err := file.Read(input)
+	log.Printf("N_bytes: %d", n_bytes)
+	if err != io.EOF {
+		log.Printf("ERROR: Could not read queue from file! error: %s", err)
+		return
+	}
+	err := json.Unmarshal(input[:n_bytes], &Queue)
+	if err != nil {
+		//Test contents of Queue! Is fatal needed?
+		log.Fatal("FATAL: Could not decode file input! json error: %s", err)
+	}
+}
+
+func File_Write(file *os.File) {
+	output, err := json.Marshal(Queue)
+	if err != nil {
+		log.Printf("ERROR: Could not encode queue! json error: %s", err)
+	}
+	_,err := file.os.Write(output)
+	if err != nil {
+		log.Printf("ERROR: Coult not write queue to file! error: %s", err)
+	}
+}
 //-----------------------------------------------------
 func Calculate(addr string, button config.ButtonStruct) int {
 	const COST_MOVE_ONE_FLOOR = 1
@@ -104,10 +141,11 @@ func Calculate(addr string, button config.ButtonStruct) int {
 	if (elev.Direction == config.DIR_UP && button.Floor > elev.Last_floor) || (elev.Direction == config.DIR_DOWN && button.Floor < elev.Last_floor) {
 		cost = int(math.Abs(float64(elev.Last_floor-button.Floor)) * COST_MOVE_ONE_FLOOR)
 		for f := elev.Last_floor; f != button.Floor; f += int(elev.Direction) {
-			//Kun hvis den faktisk skal stoppe? Typ should_stop_on_floor(floor, elev)
-			cost += COST_STOP
+			if(Should_Stop_On_Floor(f)){	//FUNKER KUN FOR LOCAL ELEV!!!!
+				cost += COST_STOP
+			}
 		}
-	} else { //ERROR: Kommer inn her uten å komme inn i løkka under... FIKS!
+	} else {
 		cost = int(-math.Abs(float64(elev.Last_floor-button.Floor)) * COST_MOVE_ONE_FLOOR)
 	}
 
@@ -123,7 +161,6 @@ func Calculate(addr string, button config.ButtonStruct) int {
 				}
 			}
 		}
-		//Hva med de den skal stoppe på på veien forbi?
 		cost += int(math.Abs(float64(furthest_floor-button.Floor)) * COST_MOVE_ONE_FLOOR * 2)
 	}
 	return cost

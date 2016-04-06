@@ -13,7 +13,8 @@ var Laddr = ""
 
 const MESSAGE_PREFIX = "Ey Billy!"
 
-const TIMEOUT = 3*time.Second
+const TIMEOUT_REMOTE = 3*time.Second
+const TIMEOUT_LOCAL = 1.5*time.Second
 
 type ButtonType int
 const (
@@ -62,11 +63,6 @@ type NetworkMessage struct {
 	Raddr string						//The remote address we are receiving from, on form IP:port.
 	Data []byte			
 	Length int							//Length of received data, don't care when transmitting
-}
-
-type Order struct{
-	Active bool; 						//Is this button pressed?
-	Addr string; 						//Which elevator executes this order
 }
 
 var Active_elevs = make(map[string]*ElevState)

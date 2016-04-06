@@ -10,9 +10,11 @@ import (
 
 var ch_open_door = make(chan bool)
 var ch_outgoing chan<- config.Message
+var ch_order_received <-chan config.ButtonStruct
 
-func FSM_Init(ch_outgoing_msg chan<- config.Message) {
+func Init(ch_outgoing_msg chan<- config.Message, ch_new_order <-chan config.ButtonStruct) {
 	ch_outgoing = ch_outgoing_msg
+	ch_order_received = ch_new_order
 	go Open_Door(ch_open_door)
 }
 
@@ -27,25 +29,28 @@ func Event_Reached_Floor(floor int, ch_outgoing_msg chan<- config.Message) {
 	}
 }
 
-func Event_Order_Received(button config.ButtonStruct) {
-	target := queue.Get_Optimal_Elev(button)
-	queue.Add_Order(button, target)
+func Event_Order_Received() {
+	for {
+		button := <- ch_order_received
+		target := queue.Get_Optimal_Elev(button)
+		queue.Add_Order(button, target)
 
-	if target == config.Laddr {
-		if config.Local_elev.Door_open {
-			if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
-				queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing, true)
-				ch_open_door <- true
-			}
-		} else if config.Local_elev.Is_idle {
-			dir := Choose_New_Direction()
-			config.Local_elev.Direction = dir
-			hardware.Elev_Set_Motor_Direction(dir)
-			if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
-				ch_open_door <- true
-				queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing, true)
-			} else {
-				config.Local_elev.Is_idle = false
+		if target == config.Laddr {
+			if config.Local_elev.Door_open {
+				if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
+					queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing, true)
+					ch_open_door <- true
+				}
+			} else if config.Local_elev.Is_idle {
+				dir := Choose_New_Direction()
+				config.Local_elev.Direction = dir
+				hardware.Elev_Set_Motor_Direction(dir)
+				if queue.Should_Stop_On_Floor(config.Local_elev.Last_floor) {
+					ch_open_door <- true
+					queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing, true)
+				} else {
+					config.Local_elev.Is_idle = false
+				}
 			}
 		}
 	}

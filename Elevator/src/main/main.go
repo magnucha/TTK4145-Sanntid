@@ -8,39 +8,46 @@ import (
 	"network"
 	"queue"
 	"time"
+	"os"
 )
 
 var ch_incoming_msg = make(chan config.Message)
 var ch_outgoing_msg = make(chan config.Message)
-var ch_new_order = make(chan config.Message)
-var ch_del_order = make(chan config.Message)
+var ch_new_order = make(chan config.ButtonStruct)
+//var ch_del_order = make(chan config.Message)
 var ch_button_pressed = make(chan config.ButtonStruct)
 var ch_floor_poll = make(chan int)
 var ch_new_elev = make(chan string)
-
-//var heis config.ElevState
+var ch_main_alive = make(chan bool)
 
 func main() {
-	network.Network_Init(ch_outgoing_msg, ch_incoming_msg, ch_new_elev)
-	time.Sleep(time.Millisecond)
-	if !hardware.Elev_Init() {
-		log.Fatal("Unable to initialize elevator hardware!")
+	network.Init(ch_outgoing_msg, ch_incoming_msg, ch_new_elev, ch_main_alive)
+	if queue_file,err := os.Open("Elev_Queue.txt"); err == nil {
+		Backup_Hold()
+		queue.Read_File(queue_file)
+	} else {
+		if !hardware.Elev_Init() {
+			log.Fatal("Unable to initialize elevator hardware!")
+		}
+		if _,err := os.Create("Elev_Queue.txt"); err != nil {
+			log.Fatal("FATAL: Could not create queue file!")
+		}
 	}
+	backup := exec.Command("gnome-terminal", "-x", "sh", "-c", "go run main.go")
+	backup.Run()
+
 	go Message_Server()
 	go Channel_Server()
 	go hardware.Read_Buttons(ch_button_pressed)
 	go hardware.Set_Lights()
 	go hardware.Floor_Poller(ch_floor_poll)
 	go State_Spammer()
-	fsm.FSM_Init(ch_outgoing_msg)
+	fsm.Init(ch_outgoing_msg, ch_new_order)
 
 	log.Printf("Elev addr: %s", config.Laddr)
 
 	for {
 		time.Sleep(3 * time.Second)
-		/*for _, elev := range config.Active_elevs {
-			log.Printf("Direction: %d, Num elevs: %d", elev.Last_floor, len(config.Active_elevs))
-		}*/
 	}
 
 }
@@ -64,9 +71,10 @@ func Message_Server() {
 				time.Sleep(10 * time.Microsecond)
 			}
 			State_Copy(config.Active_elevs[msg.Raddr], &msg.State)
-			config.Active_elevs[msg.Raddr].Timer.Reset(config.TIMEOUT)
+			config.Active_elevs[msg.Raddr].Timer.Reset(config.TIMEOUT_REMOTE)
 		case config.ADD_ORDER:
-			fsm.Event_Order_Received(msg.Button)
+			ch_new_order <- msg.Button
+			//fsm.Event_Order_Received(msg.Button)
 		case config.DELETE_ORDER:
 			queue.Delete_Order(msg.Button.Floor, ch_outgoing_msg, false)
 		}
@@ -102,9 +110,9 @@ func Set_Active(raddr string) {
 	}
 	killer := func() {
 		delete(config.Active_elevs, raddr)
-		//Redistribute orders
+		ReassignOrders(raddr, ch_new_order)
 	}
-	config.Active_elevs[raddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: -1, Timer: time.AfterFunc(config.TIMEOUT, killer)}
+	config.Active_elevs[raddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: -1, Timer: time.AfterFunc(config.TIMEOUT_REMOTE, killer)}
 }
 
 func State_Copy(a *config.ElevState, b *config.ElevState) {
@@ -114,31 +122,23 @@ func State_Copy(a *config.ElevState, b *config.ElevState) {
 	a.Last_floor = b.Last_floor
 }
 
+func Backup_Hold() {
+	timer_alive := time.NewTimer(config.TIMEOUT_LOCAL)
+	for {
+		select {
+		case <- ch_main_alive:
+			timer_alive.Reset()
+		case <- timer_alive.C
+			return
+		}
+		time.Sleep(100*time.Millisecond)
+	}
+}
+
 /*
-Channel server:
-	- Receive button pressed
-		- Add to queue
-		- Broadcast new order
-	- Receive from floor poller
-		- If order in same dir
-			- Stop in floor
-			- Delete pick-up order
-			- Delete if command order on floor
-			- Continue to destination
-	- Completed order
-		- Broadcast DELETE_ORDER
-
-
-Bestillingsutdeling:
-	- GetCost(Order, ElevState) int	//Returnerer cost til en bestilling for den gitte heisen
-	- AssignElev(Order)				//Finner beste heis, og setter Queue.Addr
-	- ReassignOrders(addr string) 	//Kaller AssignElev på alle bestillinger med addr=addr
-
-
-
-
-
-
-
+Feiltoleranse:
+	- Cosmic rays
+		- DAFUQ???
+		- acceptance test on variables
 
 */

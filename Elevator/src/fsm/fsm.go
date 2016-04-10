@@ -10,9 +10,9 @@ import (
 
 var ch_open_door = make(chan bool)
 var ch_outgoing chan<- config.Message
-var ch_order_received <-chan config.ButtonStruct
+var ch_order_received chan config.ButtonStruct
 
-func Init(ch_outgoing_msg chan<- config.Message, ch_new_order <-chan config.ButtonStruct) {
+func Init(ch_outgoing_msg chan<- config.Message, ch_new_order chan config.ButtonStruct) {
 	ch_outgoing = ch_outgoing_msg
 	ch_order_received = ch_new_order
 	go Open_Door(ch_open_door)
@@ -32,15 +32,14 @@ func Event_Reached_Floor(floor int) {
 func Event_Order_Received() {
 	for {
 		log.Printf("Event_Order_Received")
-		button := <- ch_order_received
+		button := <-ch_order_received
 		var target string
-		if (button.Button_type == config.BUTTON_COMMAND) {
-			target = config.Laddr 
+		if button.Button_type == config.BUTTON_COMMAND {
+			target = config.Laddr
 		} else {
 			target = queue.Get_Optimal_Elev(button)
 		}
-		queue.Add_Order(button, target)
-
+		queue.Add_Order(button, target, ch_outgoing, ch_order_received)
 
 		if target == config.Laddr {
 			if config.Local_elev.Door_open {

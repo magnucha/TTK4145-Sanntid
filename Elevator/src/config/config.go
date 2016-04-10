@@ -19,7 +19,7 @@ const MESSAGE_PREFIX = "Ey Billy!"
 
 const TIMEOUT_REMOTE = 3 * time.Second
 const TIMEOUT_LOCAL = time.Second
-const TIMEOUT_ORDER = 2 * time.Second
+const TIMEOUT_ORDER = 10 * time.Second
 
 type ButtonType int
 

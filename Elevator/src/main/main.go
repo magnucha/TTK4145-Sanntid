@@ -62,8 +62,6 @@ func Message_Server() {
 	for {
 		msg := <-ch_incoming_msg
 		switch msg.Msg_type {
-		//case config.ACK:
-		//	Increment_Ack_Counter(msg)	//Not yet implemented
 		case config.STATE_UPDATE:
 			already_active := false
 			for addr, _ := range config.Active_elevs {
@@ -80,9 +78,15 @@ func Message_Server() {
 			config.Active_elevs[msg.Raddr].Timer.Reset(config.TIMEOUT_REMOTE)
 		case config.ADD_ORDER:
 			ch_new_order <- msg.Button
+			ACK_msg := msg
+			ACK_msg.Msg_type = config.ACK
+			ch_outgoing_msg <- ACK_msg
 		case config.DELETE_ORDER:
 			log.Println("Remote delete order received")
 			queue.Delete_Order(msg.Button.Floor, ch_outgoing_msg, false)
+			ACK_msg := msg
+			ACK_msg.Msg_type = config.ACK
+			ch_outgoing_msg <- ACK_msg
 		}
 	}
 }

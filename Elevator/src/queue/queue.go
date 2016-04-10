@@ -39,8 +39,9 @@ func Add_Order(button config.ButtonStruct, addr string, ch_outgoing_msg chan<- c
 	Queue[button.Floor][button.Button_type].Active = true
 	Queue[button.Floor][button.Button_type].Addr = addr
 	order_timeout := func() {
-		Delete_Order(button.Floor, ch_outgoing_msg, true)
+		Delete_Order(button.Floor, ch_outgoing_msg, false)
 		ch_new_order <- button
+		//ch_outgoing_msg <- config.Message{Msg_type: config.ADD_ORDER, Button: button}
 		log.Printf("Reassining")
 	}
 	Queue[button.Floor][button.Button_type].Timer = time.AfterFunc(config.TIMEOUT_ORDER, order_timeout)
@@ -49,7 +50,7 @@ func Add_Order(button config.ButtonStruct, addr string, ch_outgoing_msg chan<- c
 
 func Get_Order(button config.ButtonStruct) Order {
 	if button.Floor < 0 || button.Floor > 3 {
-		log.Fatal("FATAL: Get_Order floor out of range! Floor is", button.Floor)
+		log.Fatal("FATAL: Get_Order floor out of range! Floor is ", button.Floor)
 	}
 	return Queue[button.Floor][button.Button_type]
 }

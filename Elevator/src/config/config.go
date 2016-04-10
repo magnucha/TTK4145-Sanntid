@@ -20,6 +20,7 @@ const MESSAGE_PREFIX = "Ey Billy!"
 const TIMEOUT_REMOTE = 3 * time.Second
 const TIMEOUT_LOCAL = time.Second
 const TIMEOUT_ORDER = 10 * time.Second
+const TIMEOUT_UDP = 500*time.Millisecond
 
 type ButtonType int
 
@@ -46,7 +47,6 @@ type ElevState struct {
 }
 
 type MessageType int
-
 const (
 	ACK = iota
 	STATE_UPDATE

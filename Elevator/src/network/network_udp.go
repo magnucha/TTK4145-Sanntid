@@ -5,9 +5,17 @@ import (
 	"encoding/json"
 	"log"
 	"net"
+	"time"
 )
 
-func Init(ch_outgoing_msg <-chan config.Message, ch_incoming_msg chan<- config.Message, ch_new_elev chan<- string, ch_main_alive chan<- bool) {
+type ACK_Timer struct {
+	cnt int
+	timer *time.Timer
+}
+
+var message_log = make(map[string]ACK_Timer)
+
+func Init(ch_outgoing_msg chan config.Message, ch_incoming_msg chan<- config.Message, ch_new_elev chan<- string, ch_main_alive chan<- bool) {
 	ch_UDP_transmit := make(chan []byte)
 	ch_UDP_received := make(chan config.NetworkMessage, 5)
 
@@ -36,14 +44,25 @@ func Store_Local_Addr() {
 }
 
 
-func Encode_And_Forward_Transmission(ch_transmit chan<- []byte, ch_outgoing_msg <-chan config.Message) {
+func Encode_And_Forward_Transmission(ch_transmit chan<- []byte, ch_outgoing_msg chan config.Message) {
 	for {
 		msg := <-ch_outgoing_msg
 		msg.Elevs_in_network_count = len(config.Active_elevs)
 		json_msg, err := json.Marshal(msg)
 		if err != nil {
 			log.Printf("UDP_Encode_And_Forward_Transmission: json error:", err)
+			continue
 		}
+
+		if (msg.Msg_type == config.ADD_ORDER || msg.Msg_type == config.DELETE_ORDER) && len(config.Active_elevs) > 1 {
+			retransmit := func() {
+				ch_outgoing_msg <- msg
+				delete(message_log, string(json_msg))
+				log.Printf("Retransmission: %s", json_msg)
+			}
+			message_log[string(json_msg[14:])] = ACK_Timer{cnt: 0, timer: time.AfterFunc(config.TIMEOUT_UDP, retransmit)}
+		}
+
 		ch_transmit <- append([]byte(config.MESSAGE_PREFIX), json_msg...)
 	}
 }
@@ -51,24 +70,34 @@ func Encode_And_Forward_Transmission(ch_transmit chan<- []byte, ch_outgoing_msg 
 func Decode_And_Forward_Reception(ch_new_elev chan<- string, ch_received <-chan config.NetworkMessage, ch_incoming_msg chan<- config.Message, ch_main_alive chan<- bool) {
 	for {
 		received := <-ch_received
-		//log.Printf("UDP Test: %s", received.Data)
-		if string(received.Data[:len(config.MESSAGE_PREFIX)]) != config.MESSAGE_PREFIX {
+		if string(received.Data[:len(config.MESSAGE_PREFIX)]) != config.MESSAGE_PREFIX || received.Raddr == config.Laddr {
 			continue
 		}
 
 		if string(received.Data)[:len(config.UDP_PRESENCE_MSG)] == config.UDP_PRESENCE_MSG {
 			ch_new_elev <- received.Raddr
-		} else if received.Raddr == config.Laddr {
-			continue
-		//	ch_main_alive <- true
 		} else {
 			var msg config.Message
 			err := json.Unmarshal(received.Data[len(config.MESSAGE_PREFIX):received.Length], &msg)
 			if err != nil {
 				log.Printf("UDP_Decode_And_Forward_Reception: json error: %s", received.Data)
+				log.Printf("UDP_Decode_And_Forward_Reception: json error: %s", err)
+				continue
+			}
+			if (msg.Msg_type == config.ACK) {
+				Incremement_ACK_Counter(string(received.Data[len(config.MESSAGE_PREFIX)+14:received.Length]))
 			}
 			msg.Raddr = received.Raddr
 			ch_incoming_msg <- msg
 		}
+	}
+}
+
+func Incremement_ACK_Counter(key string) {
+	counter := message_log[key]
+	counter.cnt++
+	if counter.cnt >= len(config.Active_elevs)-1 {
+		counter.timer.Stop()
+		delete(message_log, key)
 	}
 }

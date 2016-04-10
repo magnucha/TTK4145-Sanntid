@@ -6,15 +6,16 @@ import (
 	"hardware"
 	"log"
 	"network"
-	"queue"
-	"time"
 	"os"
 	"os/exec"
+	"queue"
+	"time"
 )
 
 var ch_incoming_msg = make(chan config.Message)
 var ch_outgoing_msg = make(chan config.Message)
 var ch_new_order = make(chan config.ButtonStruct)
+
 //var ch_del_order = make(chan config.Message)
 var ch_button_pressed = make(chan config.ButtonStruct)
 var ch_floor_poll = make(chan int)
@@ -22,14 +23,14 @@ var ch_new_elev = make(chan string)
 var ch_main_alive = make(chan bool)
 
 func main() {
-	if _,err := os.Open(config.QUEUE_FILENAME); err == nil {
+	if _, err := os.Open(config.QUEUE_FILENAME); err == nil {
 		Backup_Hold()
 		queue.File_Read(config.QUEUE_FILENAME)
 		network.Init(ch_outgoing_msg, ch_incoming_msg, ch_new_elev, ch_main_alive)
 	} else {
 		network.Init(ch_outgoing_msg, ch_incoming_msg, ch_new_elev, ch_main_alive)
 		time.Sleep(time.Millisecond)
-		if _,err := os.Create(config.QUEUE_FILENAME); err != nil {
+		if _, err := os.Create(config.QUEUE_FILENAME); err != nil {
 			log.Fatal("FATAL: Could not create queue file!")
 		}
 	}
@@ -104,7 +105,7 @@ func Channel_Server() {
 
 func State_Spammer() {
 	for {
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 		ch_outgoing_msg <- config.Message{Msg_type: config.STATE_UPDATE, State: *config.Active_elevs[config.Laddr]}
 	}
 }
@@ -135,17 +136,17 @@ func Backup_Hold() {
 	conn := network.UDP_Create_Listen_Socket(config.UDP_ALIVE_PORT)
 	defer conn.Close()
 	go network.UDP_Receive(conn, ch_reset)
-	
+
 	for {
 		select {
-		case msg := <- ch_reset:
+		case msg := <-ch_reset:
 			if string(msg.Data[:len(config.UDP_PRESENCE_MSG)]) == config.UDP_PRESENCE_MSG {
 				timer_alive.Reset(config.TIMEOUT_LOCAL)
 			}
-		case <- timer_alive.C:
+		case <-timer_alive.C:
 			return
 		}
-		time.Sleep(100*time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 

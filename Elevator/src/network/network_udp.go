@@ -51,6 +51,7 @@ func Encode_And_Forward_Transmission(ch_transmit chan<- []byte, ch_outgoing_msg 
 func Decode_And_Forward_Reception(ch_new_elev chan<- string, ch_received <-chan config.NetworkMessage, ch_incoming_msg chan<- config.Message, ch_main_alive chan<- bool) {
 	for {
 		received := <-ch_received
+		//log.Printf("UDP Test: %s", received.Data)
 		if string(received.Data[:len(config.MESSAGE_PREFIX)]) != config.MESSAGE_PREFIX {
 			continue
 		}
@@ -64,7 +65,7 @@ func Decode_And_Forward_Reception(ch_new_elev chan<- string, ch_received <-chan 
 			var msg config.Message
 			err := json.Unmarshal(received.Data[len(config.MESSAGE_PREFIX):received.Length], &msg)
 			if err != nil {
-				log.Printf("UDP_Decode_And_Forward_Reception: json error:", err)
+				log.Printf("UDP_Decode_And_Forward_Reception: json error: %s", received.Data)
 			}
 			msg.Raddr = received.Raddr
 			ch_incoming_msg <- msg

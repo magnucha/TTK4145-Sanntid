@@ -51,15 +51,18 @@ func Should_Stop_On_Floor(floor int) bool {
 	if dir == config.DIR_DOWN && !Is_Order_Below(floor) {
 		return true
 	}
-
-	var button_in_current_dir config.ButtonType
-	if dir == config.DIR_UP || floor == 0 {
-		button_in_current_dir = config.BUTTON_CALL_UP
-	} else {
-		button_in_current_dir = config.BUTTON_CALL_DOWN
+	if dir == config.DIR_STOP && config.Local_elev.Last_floor == floor {
+		return true
 	}
 
-	pick_up := Queue[floor][button_in_current_dir].Active
+	var relevant_button config.ButtonType
+	if dir == config.DIR_UP || floor == 0 {
+		relevant_button = config.BUTTON_CALL_UP
+	} else {
+		relevant_button = config.BUTTON_CALL_DOWN
+	}
+
+	pick_up := Queue[floor][relevant_button].Active
 	command := Queue[floor][config.BUTTON_COMMAND].Active
 	return pick_up || command
 }

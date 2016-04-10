@@ -31,7 +31,6 @@ func Event_Reached_Floor(floor int) {
 
 func Event_Order_Received() {
 	for {
-		log.Printf("Event_Order_Received")
 		button := <-ch_order_received
 		var target string
 		if button.Button_type == config.BUTTON_COMMAND {
@@ -49,7 +48,6 @@ func Event_Order_Received() {
 					queue.Delete_Order(config.Local_elev.Last_floor, ch_outgoing, true)
 				}
 			} else if config.Local_elev.Is_idle {
-				log.Println("ELEV IDLE")
 				dir := Choose_New_Direction()
 				config.Local_elev.Direction = dir
 				hardware.Elev_Set_Motor_Direction(dir)

@@ -13,7 +13,7 @@ type ACK_Timer struct {
 	timer *time.Timer
 }
 
-var message_log = make(map[string]ACK_Timer)
+var message_log = make(map[string]*ACK_Timer)
 
 func Init(ch_outgoing_msg chan config.Message, ch_incoming_msg chan<- config.Message, ch_new_elev chan<- string, ch_main_alive chan<- bool) {
 	ch_UDP_transmit := make(chan []byte)
@@ -58,9 +58,9 @@ func Encode_And_Forward_Transmission(ch_transmit chan<- []byte, ch_outgoing_msg 
 			retransmit := func() {
 				ch_outgoing_msg <- msg
 				delete(message_log, string(json_msg))
-				log.Printf("Retransmission: %s", json_msg)
+				log.Println("Retransmission!")
 			}
-			message_log[string(json_msg[14:])] = ACK_Timer{cnt: 0, timer: time.AfterFunc(config.TIMEOUT_UDP, retransmit)}
+			message_log[string(json_msg[14:])] = &ACK_Timer{cnt: 0, timer: time.AfterFunc(config.TIMEOUT_UDP, retransmit)}
 		}
 
 		ch_transmit <- append([]byte(config.MESSAGE_PREFIX), json_msg...)
@@ -80,7 +80,6 @@ func Decode_And_Forward_Reception(ch_new_elev chan<- string, ch_received <-chan 
 			var msg config.Message
 			err := json.Unmarshal(received.Data[len(config.MESSAGE_PREFIX):received.Length], &msg)
 			if err != nil {
-				log.Printf("UDP_Decode_And_Forward_Reception: json error: %s", received.Data)
 				log.Printf("UDP_Decode_And_Forward_Reception: json error: %s", err)
 				continue
 			}
@@ -94,10 +93,11 @@ func Decode_And_Forward_Reception(ch_new_elev chan<- string, ch_received <-chan 
 }
 
 func Incremement_ACK_Counter(key string) {
-	counter := message_log[key]
-	counter.cnt++
-	if counter.cnt >= len(config.Active_elevs)-1 {
-		counter.timer.Stop()
-		delete(message_log, key)
+	if message_log[key] != nil {
+		message_log[key].cnt++
+		if message_log[key].cnt >= len(config.Active_elevs)-1 {
+			message_log[key].timer.Stop()
+			delete(message_log, key)
+		}
 	}
 }

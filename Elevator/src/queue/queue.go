@@ -12,8 +12,8 @@ import (
 )
 
 type Order struct {
-	Active bool        //Is this button pressed?
-	Addr   string      //Which elevator executes this order
+	Active bool
+	Addr   string
 	Timer  *time.Timer `json:"-"`
 }
 
@@ -41,7 +41,6 @@ func Add_Order(button config.ButtonStruct, addr string, ch_outgoing_msg chan<- c
 	order_timeout := func() {
 		Delete_Order(button.Floor, ch_outgoing_msg, false)
 		ch_new_order <- button
-		//ch_outgoing_msg <- config.Message{Msg_type: config.ADD_ORDER, Button: button}
 		log.Printf("Reassining")
 	}
 	Queue[button.Floor][button.Button_type].Timer = time.AfterFunc(config.TIMEOUT_ORDER, order_timeout)
@@ -221,7 +220,6 @@ func Get_Optimal_Elev(button config.ButtonStruct) string {
 	lowest := 100000
 	for addr, _ := range config.Active_elevs {
 		cost := Calculate(addr, button)
-		log.Printf("COST: Lowest=%d, Cost=%d, Addr=%s\n", lowest, cost, addr)
 		if cost < lowest {
 			optimal = addr
 			lowest = cost

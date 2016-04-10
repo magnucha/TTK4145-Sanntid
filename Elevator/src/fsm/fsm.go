@@ -22,10 +22,10 @@ func Event_Reached_Floor(floor int) {
 	config.Local_elev.Last_floor = floor
 	hardware.Elev_Set_Floor_Indicator(floor)
 	if queue.Should_Stop_On_Floor(floor) {
+		config.Local_elev.Is_idle = true
 		hardware.Elev_Set_Motor_Direction(config.DIR_STOP)
 		queue.Delete_Order(floor, ch_outgoing, true)
 		ch_open_door <- true
-		config.Local_elev.Is_idle = true
 	}
 }
 

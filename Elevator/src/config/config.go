@@ -41,9 +41,9 @@ const (
 type ElevState struct {
 	Is_idle    bool
 	Door_open  bool
-	Direction  MotorDir //General direction, not always current
+	Direction  MotorDir 
 	Last_floor int
-	Timer      *time.Timer `json:"-"` //Each elevator got its own timer that resets when a STATE_UPDATE is received
+	Timer      *time.Timer `json:"-"` 
 }
 
 type MessageType int
@@ -54,12 +54,11 @@ const (
 	DeleteOrder
 )
 
-type Message struct { //The data to be sent through a NetworkMessage
+type Message struct {
 	Raddr                  string `json:"-"`
 	Msg_type               MessageType
 	State                  ElevState
 	Button                 ButtonStruct
-	Elevs_in_network_count int //Used by receiver to check if sender and receiver "see" the same network, to make sure all necessary connections are made
 }
 
 type ButtonStruct struct {
@@ -68,9 +67,9 @@ type ButtonStruct struct {
 }
 
 type NetworkMessage struct {
-	Raddr  string //The remote address we are receiving from, on form IP:port.
+	Raddr  string
 	Data   []byte
-	Length int //Length of received data, don't care when transmitting
+	Length int
 }
 
 var Active_elevs = make(map[string]*ElevState)

@@ -17,7 +17,7 @@ var message_log = make(map[string]*ACK_Timer)
 
 func Init(ch_outgoing_msg chan config.Message, ch_incoming_msg chan<- config.Message, ch_new_elev chan<- string, ch_main_alive chan<- bool) {
 	ch_UDP_transmit := make(chan []byte)
-	ch_UDPReceived := make(chan config.NetworkMessage, 5)
+	ch_UDPReceived := make(chan config.NetworkMessage, 10)
 
 	UDP_broadcast_socket := UDPCreateSendSocket(config.UDP_BROADCAST_ADDR + config.UDP_BROADCAST_PORT)
 	UDP_listen_socket := UDPCreateListenSocket(config.UDP_BROADCAST_PORT)
@@ -27,7 +27,7 @@ func Init(ch_outgoing_msg chan config.Message, ch_incoming_msg chan<- config.Mes
 	//We choose to begin receiving UDP after broadcast to avoid creating a connection to ourselves
 	go UDPSend(UDP_broadcast_socket, ch_UDP_transmit)
 	go UDPAliveSpam(UDP_alive_socket)
-	UDPBroadcastPresence(UDP_broadcast_socket, ch_UDP_transmit)
+	//UDPBroadcastPresence(UDP_broadcast_socket, ch_UDP_transmit)
 	go UDPReceive(UDP_listen_socket, ch_UDPReceived)
 
 	go EncodeAndForwardTransmission(ch_UDP_transmit, ch_outgoing_msg)
@@ -40,14 +40,13 @@ func StoreLocalAddr() {
 	tempAddr := tempConn.LocalAddr()
 	laddr, _ := net.ResolveUDPAddr("udp4", tempAddr.String())
 	config.Laddr = laddr.IP.String()
-	defer tempConn.Close()
+	tempConn.Close()
 }
 
 
 func EncodeAndForwardTransmission(ch_transmit chan<- []byte, ch_outgoing_msg chan config.Message) {
 	for {
 		msg := <-ch_outgoing_msg
-		msg.Elevs_in_network_count = len(config.Active_elevs)
 		json_msg, err := json.Marshal(msg)
 		if err != nil {
 			log.Printf("UDP_EncodeAndForwardTransmission: json error:", err)

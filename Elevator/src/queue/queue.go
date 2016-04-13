@@ -21,16 +21,17 @@ var Queue = [config.NUM_FLOORS][config.NUM_BUTTONS]Order{}
 
 //Assume everyone enters when we stop --> delete all orders on the floor
 func DeleteOrder(floor int, ch_outgoing_msg chan<- config.Message, call_is_local bool) {
-	for button := config.BUTTON_CALL_UP; button <= config.BUTTON_COMMAND; button++ {
+	last_button := config.BUTTON_CALL_DOWN
+	if call_is_local {
+		last_button = config.BUTTON_COMMAND
+		ch_outgoing_msg <- config.Message{Msg_type: config.DeleteOrder, Button: config.ButtonStruct{Floor: floor}}
+	}
+	for button := config.BUTTON_CALL_UP; button <= last_button; button++ {
 		Queue[floor][button].Active = false
 		Queue[floor][button].Addr = ""
 		if Queue[floor][button].Timer != nil {
 			Queue[floor][button].Timer.Stop()
 		}
-
-	}
-	if call_is_local {
-		ch_outgoing_msg <- config.Message{Msg_type: config.DeleteOrder, Button: config.ButtonStruct{Floor: floor}}
 	}
 	FileWrite(config.QUEUE_FILENAME)
 }
@@ -63,7 +64,7 @@ func ShouldStopOnFloor(floor int) bool {
 	if dir == config.DIR_DOWN && !IsOrderBelow(floor) {
 		return true
 	}
-	if dir == config.DIR_STOP && config.Local_elev.Last_floor == floor {
+	if dir == config.DIR_STOP && GetOrder(config.ButtonStruct{config.BUTTON_CALL_UP, floor}).Active {
 		return true
 	}
 
@@ -168,7 +169,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 	//Moving towards destination floor
 	if (elev.Direction == config.DIR_UP && button.Floor > elev.Last_floor) || (elev.Direction == config.DIR_DOWN && button.Floor < elev.Last_floor) {
 		for f := elev.Last_floor; f != button.Floor; f += int(elev.Direction) {
-			for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
+			for b := config.BUTTON_CALL_UP; b < config.BUTTON_COMMAND; b++ {
 				if GetOrder(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
 					cost += COST_STOP
 					break
@@ -179,7 +180,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 		if (elev.Direction == config.DIR_UP && button.Button_type == config.BUTTON_CALL_DOWN) || (elev.Direction == config.DIR_DOWN && button.Button_type == config.BUTTON_CALL_UP) {
 			furthest_floor := button.Floor
 			for f := button.Floor + int(elev.Direction); f >= 0 && f < config.NUM_FLOORS; f += int(elev.Direction) {
-				for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
+				for b := config.BUTTON_CALL_UP; b < config.BUTTON_COMMAND; b++ {
 					if GetOrder(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
 						furthest_floor = f
 						cost += COST_STOP
@@ -193,7 +194,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 	} else if !elev.Is_idle {
 		furthest_floor := -1
 		for f := elev.Last_floor; f >= 0 && f < config.NUM_FLOORS; f += int(elev.Direction) {
-			for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
+			for b := config.BUTTON_CALL_UP; b < config.BUTTON_COMMAND; b++ {
 				if GetOrder(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
 					furthest_floor = f
 					cost += COST_STOP
@@ -204,7 +205,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 		cost += int(math.Abs(float64(furthest_floor-elev.Last_floor))) * COST_MOVE_ONE_FLOOR * 2
 
 		for f := elev.Last_floor; f != button.Floor; f -= int(elev.Direction) {
-			for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
+			for b := config.BUTTON_CALL_UP; b < config.BUTTON_COMMAND; b++ {
 				if GetOrder(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
 					cost += COST_STOP
 					break

@@ -27,7 +27,6 @@ func Init(ch_outgoing_msg chan config.Message, ch_incoming_msg chan<- config.Mes
 	//We choose to begin receiving UDP after broadcast to avoid creating a connection to ourselves
 	go UDPSend(UDP_broadcast_socket, ch_UDP_transmit)
 	go UDPAliveSpam(UDP_alive_socket)
-	//UDPBroadcastPresence(UDP_broadcast_socket, ch_UDP_transmit)
 	go UDPReceive(UDP_listen_socket, ch_UDPReceived)
 
 	go EncodeAndForwardTransmission(ch_UDP_transmit, ch_outgoing_msg)
@@ -73,21 +72,17 @@ func DecodeAndForwardReception(ch_new_elev chan<- string, ch_received <-chan con
 			continue
 		}
 
-		if string(received.Data)[:len(config.UDP_PRESENCE_MSG)] == config.UDP_PRESENCE_MSG {
-			ch_new_elev <- received.Raddr
-		} else {
-			var msg config.Message
-			err := json.Unmarshal(received.Data[len(config.MESSAGE_PREFIX):received.Length], &msg)
-			if err != nil {
-				log.Printf("UDP_DecodeAndForwardReception: json error: %s", err)
-				continue
-			}
-			if (msg.Msg_type == config.ACK) {
-				IncremementACKCounter(string(received.Data[len(config.MESSAGE_PREFIX)+14:received.Length]))
-			}
-			msg.Raddr = received.Raddr
-			ch_incoming_msg <- msg
+		var msg config.Message
+		err := json.Unmarshal(received.Data[len(config.MESSAGE_PREFIX):received.Length], &msg)
+		if err != nil {
+			log.Printf("UDP_DecodeAndForwardReception: json error: %s", err)
+			continue
 		}
+		if (msg.Msg_type == config.ACK) {
+			IncremementACKCounter(string(received.Data[len(config.MESSAGE_PREFIX)+14:received.Length]))
+		}
+		msg.Raddr = received.Raddr
+		ch_incoming_msg <- msg
 	}
 }
 

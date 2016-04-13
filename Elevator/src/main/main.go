@@ -40,7 +40,6 @@ func main() {
 	}
 	hardware.SetMotorDirection(fsm.ChooseNewDirection())
 	go MessageServer()
-	go ChannelServer()
 	go hardware.ReadButtons(ch_button_pressed)
 	go hardware.SetLights()
 	go hardware.FloorPoller(ch_floor_poll)
@@ -51,7 +50,15 @@ func main() {
 	log.Printf("Elev addr: %s", config.Laddr)
 
 	for {
-		time.Sleep(3 * time.Second)
+		select {
+		case button := <-ch_button_pressed:
+			ch_new_order <- button
+			if button.Button_type != config.BUTTON_COMMAND {
+				ch_outgoing_msg <- config.Message{Msg_type: config.AddOrder, Button: button}
+			}
+		case floor := <-ch_floor_poll:
+			fsm.EventReachedFloor(floor)
+		}
 	}
 
 }
@@ -69,8 +76,7 @@ func MessageServer() {
 				}
 			}
 			if !already_active {
-				ch_new_elev <- msg.Raddr
-				time.Sleep(10 * time.Microsecond)
+				SetActive(msg.Raddr)
 			}
 			StateCopy(config.Active_elevs[msg.Raddr], &msg.State)
 			config.Active_elevs[msg.Raddr].Timer.Reset(config.TIMEOUT_REMOTE)
@@ -85,22 +91,6 @@ func MessageServer() {
 			ACK_msg := msg
 			ACK_msg.Msg_type = config.ACK
 			ch_outgoing_msg <- ACK_msg
-		}
-	}
-}
-
-func ChannelServer() {
-	for {
-		select {
-		case button := <-ch_button_pressed:
-			ch_new_order <- button
-			if button.Button_type != config.BUTTON_COMMAND {
-				ch_outgoing_msg <- config.Message{Msg_type: config.AddOrder, Button: button}
-			}
-		case floor := <-ch_floor_poll:
-			fsm.EventReachedFloor(floor)
-		case raddr := <-ch_new_elev:
-			SetActive(raddr)
 		}
 	}
 }

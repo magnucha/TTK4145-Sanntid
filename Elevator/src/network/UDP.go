@@ -33,13 +33,6 @@ func UDPCreateListenSocket(port string) *net.UDPConn {
 	return connection
 }
 
-func UDPBroadcastPresence(conn *net.UDPConn, ch_transmit chan []byte) {
-	for i:=0; i<3; i++ {
-		ch_transmit <- []byte(config.UDP_PRESENCE_MSG)
-		time.Sleep(time.Millisecond)
-	}
-}
-
 func UDPSend(conn *net.UDPConn, ch_transmit <-chan []byte){
 	for {
 		msg := <- ch_transmit

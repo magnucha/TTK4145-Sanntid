@@ -48,15 +48,15 @@ func EventOrderReceived() {
 					queue.DeleteOrder(config.Local_elev.Last_floor, ch_outgoing, true)
 				}
 			} else if config.Local_elev.Is_idle {
-				dir := ChooseNewDirection()
-				config.Local_elev.Direction = dir
-				hardware.SetMotorDirection(dir)
 				if queue.ShouldStopOnFloor(config.Local_elev.Last_floor) {
 					ch_door_open <- true
 					time.Sleep(time.Millisecond)
 					queue.DeleteOrder(config.Local_elev.Last_floor, ch_outgoing, true)
 				} else {
+					dir := ChooseNewDirection()
 					config.Local_elev.Is_idle = false
+					config.Local_elev.Direction = dir
+					hardware.SetMotorDirection(dir)
 				}
 			}
 		}
@@ -118,6 +118,7 @@ func CloseDoor() {
 	config.Local_elev.Door_open = false
 	hardware.SetDoorOpenLamp(0)
 	dir := ChooseNewDirection()
+	config.Local_elev.Is_idle = (dir == config.DIR_STOP)
 	config.Local_elev.Direction = dir
 	hardware.SetMotorDirection(dir)
 }

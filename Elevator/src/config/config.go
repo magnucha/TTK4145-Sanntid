@@ -50,8 +50,8 @@ type MessageType int
 const (
 	ACK = iota
 	STATE_UPDATE
-	ADD_ORDER
-	DELETE_ORDER
+	AddOrder
+	DeleteOrder
 )
 
 type Message struct { //The data to be sent through a NetworkMessage

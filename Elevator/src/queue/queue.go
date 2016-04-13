@@ -20,7 +20,7 @@ type Order struct {
 var Queue = [config.NUM_FLOORS][config.NUM_BUTTONS]Order{}
 
 //Assume everyone enters when we stop --> delete all orders on the floor
-func Delete_Order(floor int, ch_outgoing_msg chan<- config.Message, call_is_local bool) {
+func DeleteOrder(floor int, ch_outgoing_msg chan<- config.Message, call_is_local bool) {
 	for button := config.BUTTON_CALL_UP; button <= config.BUTTON_COMMAND; button++ {
 		Queue[floor][button].Active = false
 		Queue[floor][button].Addr = ""
@@ -30,37 +30,37 @@ func Delete_Order(floor int, ch_outgoing_msg chan<- config.Message, call_is_loca
 
 	}
 	if call_is_local {
-		ch_outgoing_msg <- config.Message{Msg_type: config.DELETE_ORDER, Button: config.ButtonStruct{Floor: floor}}
+		ch_outgoing_msg <- config.Message{Msg_type: config.DeleteOrder, Button: config.ButtonStruct{Floor: floor}}
 	}
-	File_Write(config.QUEUE_FILENAME)
+	FileWrite(config.QUEUE_FILENAME)
 }
 
-func Add_Order(button config.ButtonStruct, addr string, ch_outgoing_msg chan<- config.Message, ch_new_order chan<- config.ButtonStruct) {
+func AddOrder(button config.ButtonStruct, addr string, ch_outgoing_msg chan<- config.Message, ch_new_order chan<- config.ButtonStruct) {
 	Queue[button.Floor][button.Button_type].Active = true
 	Queue[button.Floor][button.Button_type].Addr = addr
 	order_timeout := func() {
-		Delete_Order(button.Floor, ch_outgoing_msg, false)
+		DeleteOrder(button.Floor, ch_outgoing_msg, false)
 		ch_new_order <- button
 		log.Printf("Reassining")
 	}
 	Queue[button.Floor][button.Button_type].Timer = time.AfterFunc(config.TIMEOUT_ORDER, order_timeout)
-	File_Write(config.QUEUE_FILENAME)
+	FileWrite(config.QUEUE_FILENAME)
 }
 
-func Get_Order(button config.ButtonStruct) Order {
+func GetOrder(button config.ButtonStruct) Order {
 	if button.Floor < 0 || button.Floor > 3 {
-		log.Fatal("FATAL: Get_Order floor out of range! Floor is ", button.Floor)
+		log.Fatal("FATAL: GetOrder floor out of range! Floor is ", button.Floor)
 	}
 	return Queue[button.Floor][button.Button_type]
 }
 
-func Should_Stop_On_Floor(floor int) bool {
+func ShouldStopOnFloor(floor int) bool {
 	dir := config.Local_elev.Direction
 
-	if dir == config.DIR_UP && !Is_Order_Above(floor) {
+	if dir == config.DIR_UP && !IsOrderAbove(floor) {
 		return true
 	}
-	if dir == config.DIR_DOWN && !Is_Order_Below(floor) {
+	if dir == config.DIR_DOWN && !IsOrderBelow(floor) {
 		return true
 	}
 	if dir == config.DIR_STOP && config.Local_elev.Last_floor == floor {
@@ -79,7 +79,7 @@ func Should_Stop_On_Floor(floor int) bool {
 	return pick_up || command
 }
 
-func Is_Order_Above(floor int) bool {
+func IsOrderAbove(floor int) bool {
 	for floor := floor + 1; floor < config.NUM_FLOORS; floor++ {
 		for button := 0; button < config.NUM_BUTTONS; button++ {
 			if Queue[floor][button].Active && Queue[floor][button].Addr == config.Laddr {
@@ -90,7 +90,7 @@ func Is_Order_Above(floor int) bool {
 	return false
 }
 
-func Is_Empty() bool {
+func IsEmpty() bool {
 	for floor := 0; floor < config.NUM_FLOORS; floor++ {
 		for button := 0; button < config.NUM_BUTTONS; button++ {
 			if Queue[floor][button].Active && Queue[floor][button].Addr == config.Laddr {
@@ -101,7 +101,7 @@ func Is_Empty() bool {
 	return true
 }
 
-func Is_Order_Below(floor int) bool {
+func IsOrderBelow(floor int) bool {
 	for floor := floor - 1; floor >= 0; floor-- {
 		for button := 0; button < config.NUM_BUTTONS; button++ {
 			if Queue[floor][button].Active && Queue[floor][button].Addr == config.Laddr {
@@ -112,7 +112,7 @@ func Is_Order_Below(floor int) bool {
 	return false
 }
 
-func Reassign_Orders(addr string, ch_new_order chan<- config.ButtonStruct) {
+func ReassignOrders(addr string, ch_new_order chan<- config.ButtonStruct) {
 	for floor := 0; floor < config.NUM_FLOORS; floor++ {
 		for button := 0; button < config.NUM_BUTTONS; button++ {
 			if Queue[floor][button].Addr == addr {
@@ -122,7 +122,7 @@ func Reassign_Orders(addr string, ch_new_order chan<- config.ButtonStruct) {
 	}
 }
 
-func File_Read(filename string) {
+func FileRead(filename string) {
 	input, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Printf("ERROR: Could not read queue from file! error: %s", err.Error())
@@ -135,7 +135,7 @@ func File_Read(filename string) {
 	}
 }
 
-func File_Write(filename string) {
+func FileWrite(filename string) {
 	output, err := json.Marshal(Queue)
 	if err != nil {
 		log.Printf("ERROR: Could not encode queue! json error: %s", err.Error())
@@ -169,7 +169,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 	if (elev.Direction == config.DIR_UP && button.Floor > elev.Last_floor) || (elev.Direction == config.DIR_DOWN && button.Floor < elev.Last_floor) {
 		for f := elev.Last_floor; f != button.Floor; f += int(elev.Direction) {
 			for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
-				if Get_Order(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
+				if GetOrder(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
 					cost += COST_STOP
 					break
 				}
@@ -180,7 +180,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 			furthest_floor := button.Floor
 			for f := button.Floor + int(elev.Direction); f >= 0 && f < config.NUM_FLOORS; f += int(elev.Direction) {
 				for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
-					if Get_Order(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
+					if GetOrder(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
 						furthest_floor = f
 						cost += COST_STOP
 						break
@@ -194,7 +194,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 		furthest_floor := -1
 		for f := elev.Last_floor; f >= 0 && f < config.NUM_FLOORS; f += int(elev.Direction) {
 			for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
-				if Get_Order(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
+				if GetOrder(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
 					furthest_floor = f
 					cost += COST_STOP
 					break
@@ -205,7 +205,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 
 		for f := elev.Last_floor; f != button.Floor; f -= int(elev.Direction) {
 			for b := config.BUTTON_CALL_UP; b <= config.BUTTON_COMMAND; b++ {
-				if Get_Order(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
+				if GetOrder(config.ButtonStruct{config.ButtonType(b), f}).Addr == addr {
 					cost += COST_STOP
 					break
 				}
@@ -215,7 +215,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 	return cost
 }
 
-func Get_Optimal_Elev(button config.ButtonStruct) string {
+func GetOptimalElev(button config.ButtonStruct) string {
 	optimal := ""
 	lowest := 100000
 	for addr, _ := range config.Active_elevs {

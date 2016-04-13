@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func UDP_Create_Send_Socket(addr string) *net.UDPConn{
+func UDPCreateSendSocket(addr string) *net.UDPConn{
 	UDPaddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil{
 		log.Printf(err.Error())
@@ -20,7 +20,7 @@ func UDP_Create_Send_Socket(addr string) *net.UDPConn{
 	return connection
 }
 
-func UDP_Create_Listen_Socket(port string) *net.UDPConn {
+func UDPCreateListenSocket(port string) *net.UDPConn {
 	UDPaddr, err := net.ResolveUDPAddr("udp", port)
 	if err != nil{
 		log.Printf("ResolveUDPAddr error: %s", err.Error())
@@ -33,14 +33,14 @@ func UDP_Create_Listen_Socket(port string) *net.UDPConn {
 	return connection
 }
 
-func UDP_Broadcast_Presence(conn *net.UDPConn, ch_transmit chan []byte) {
+func UDPBroadcastPresence(conn *net.UDPConn, ch_transmit chan []byte) {
 	for i:=0; i<3; i++ {
 		ch_transmit <- []byte(config.UDP_PRESENCE_MSG)
 		time.Sleep(time.Millisecond)
 	}
 }
 
-func UDP_Send(conn *net.UDPConn, ch_transmit <-chan []byte){
+func UDPSend(conn *net.UDPConn, ch_transmit <-chan []byte){
 	for {
 		msg := <- ch_transmit
 		_, err := conn.Write(msg)
@@ -50,7 +50,7 @@ func UDP_Send(conn *net.UDPConn, ch_transmit <-chan []byte){
 	}
 }
 
-func UDP_Receive(conn *net.UDPConn, ch_received chan<- config.NetworkMessage) {
+func UDPReceive(conn *net.UDPConn, ch_received chan<- config.NetworkMessage) {
 	msg := make([]byte, 1024)
 	for {
 		length, raddr, err := conn.ReadFromUDP(msg)
@@ -63,7 +63,7 @@ func UDP_Receive(conn *net.UDPConn, ch_received chan<- config.NetworkMessage) {
 	}
 }
 
-func UDP_Alive_Spam(conn *net.UDPConn) {
+func UDPAliveSpam(conn *net.UDPConn) {
 	time.Sleep(2*time.Second)
 	for {
 		msg := config.UDP_PRESENCE_MSG

@@ -17,24 +17,24 @@ var message_log = make(map[string]*ACK_Timer)
 
 func Init(ch_outgoing_msg chan config.Message, ch_incoming_msg chan<- config.Message, ch_new_elev chan<- string, ch_main_alive chan<- bool) {
 	ch_UDP_transmit := make(chan []byte)
-	ch_UDP_received := make(chan config.NetworkMessage, 5)
+	ch_UDPReceived := make(chan config.NetworkMessage, 5)
 
-	UDP_broadcast_socket := UDP_Create_Send_Socket(config.UDP_BROADCAST_ADDR + config.UDP_BROADCAST_PORT)
-	UDP_listen_socket := UDP_Create_Listen_Socket(config.UDP_BROADCAST_PORT)
-	Store_Local_Addr()
-	UDP_alive_socket := UDP_Create_Send_Socket(config.Laddr + config.UDP_ALIVE_PORT)
+	UDP_broadcast_socket := UDPCreateSendSocket(config.UDP_BROADCAST_ADDR + config.UDP_BROADCAST_PORT)
+	UDP_listen_socket := UDPCreateListenSocket(config.UDP_BROADCAST_PORT)
+	StoreLocalAddr()
+	UDP_alive_socket := UDPCreateSendSocket(config.Laddr + config.UDP_ALIVE_PORT)
 
 	//We choose to begin receiving UDP after broadcast to avoid creating a connection to ourselves
-	go UDP_Send(UDP_broadcast_socket, ch_UDP_transmit)
-	go UDP_Alive_Spam(UDP_alive_socket)
-	UDP_Broadcast_Presence(UDP_broadcast_socket, ch_UDP_transmit)
-	go UDP_Receive(UDP_listen_socket, ch_UDP_received)
+	go UDPSend(UDP_broadcast_socket, ch_UDP_transmit)
+	go UDPAliveSpam(UDP_alive_socket)
+	UDPBroadcastPresence(UDP_broadcast_socket, ch_UDP_transmit)
+	go UDPReceive(UDP_listen_socket, ch_UDPReceived)
 
-	go Encode_And_Forward_Transmission(ch_UDP_transmit, ch_outgoing_msg)
-	go Decode_And_Forward_Reception(ch_new_elev, ch_UDP_received, ch_incoming_msg, ch_main_alive)
+	go EncodeAndForwardTransmission(ch_UDP_transmit, ch_outgoing_msg)
+	go DecodeAndForwardReception(ch_new_elev, ch_UDPReceived, ch_incoming_msg, ch_main_alive)
 }
 
-func Store_Local_Addr() {
+func StoreLocalAddr() {
 	baddr, _ := net.ResolveUDPAddr("udp4", config.UDP_BROADCAST_ADDR+config.UDP_BROADCAST_PORT)
 	tempConn, _ := net.DialUDP("udp4", nil, baddr)
 	tempAddr := tempConn.LocalAddr()
@@ -44,17 +44,17 @@ func Store_Local_Addr() {
 }
 
 
-func Encode_And_Forward_Transmission(ch_transmit chan<- []byte, ch_outgoing_msg chan config.Message) {
+func EncodeAndForwardTransmission(ch_transmit chan<- []byte, ch_outgoing_msg chan config.Message) {
 	for {
 		msg := <-ch_outgoing_msg
 		msg.Elevs_in_network_count = len(config.Active_elevs)
 		json_msg, err := json.Marshal(msg)
 		if err != nil {
-			log.Printf("UDP_Encode_And_Forward_Transmission: json error:", err)
+			log.Printf("UDP_EncodeAndForwardTransmission: json error:", err)
 			continue
 		}
 
-		if (msg.Msg_type == config.ADD_ORDER || msg.Msg_type == config.DELETE_ORDER) && len(config.Active_elevs) > 1 {
+		if (msg.Msg_type == config.AddOrder || msg.Msg_type == config.DeleteOrder) && len(config.Active_elevs) > 1 {
 			retransmit := func() {
 				ch_outgoing_msg <- msg
 				delete(message_log, string(json_msg))
@@ -67,7 +67,7 @@ func Encode_And_Forward_Transmission(ch_transmit chan<- []byte, ch_outgoing_msg 
 	}
 }
 
-func Decode_And_Forward_Reception(ch_new_elev chan<- string, ch_received <-chan config.NetworkMessage, ch_incoming_msg chan<- config.Message, ch_main_alive chan<- bool) {
+func DecodeAndForwardReception(ch_new_elev chan<- string, ch_received <-chan config.NetworkMessage, ch_incoming_msg chan<- config.Message, ch_main_alive chan<- bool) {
 	for {
 		received := <-ch_received
 		if string(received.Data[:len(config.MESSAGE_PREFIX)]) != config.MESSAGE_PREFIX || received.Raddr == config.Laddr {
@@ -80,11 +80,11 @@ func Decode_And_Forward_Reception(ch_new_elev chan<- string, ch_received <-chan 
 			var msg config.Message
 			err := json.Unmarshal(received.Data[len(config.MESSAGE_PREFIX):received.Length], &msg)
 			if err != nil {
-				log.Printf("UDP_Decode_And_Forward_Reception: json error: %s", err)
+				log.Printf("UDP_DecodeAndForwardReception: json error: %s", err)
 				continue
 			}
 			if (msg.Msg_type == config.ACK) {
-				Incremement_ACK_Counter(string(received.Data[len(config.MESSAGE_PREFIX)+14:received.Length]))
+				IncremementACKCounter(string(received.Data[len(config.MESSAGE_PREFIX)+14:received.Length]))
 			}
 			msg.Raddr = received.Raddr
 			ch_incoming_msg <- msg
@@ -92,7 +92,7 @@ func Decode_And_Forward_Reception(ch_new_elev chan<- string, ch_received <-chan 
 	}
 }
 
-func Incremement_ACK_Counter(key string) {
+func IncremementACKCounter(key string) {
 	if message_log[key] != nil {
 		message_log[key].cnt++
 		if message_log[key].cnt >= len(config.Active_elevs)-1 {

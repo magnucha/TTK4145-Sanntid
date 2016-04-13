@@ -4,7 +4,7 @@ import (
 	"config"
 	"log"
 	"math"
-	//"os"
+	"os"
 	"encoding/json"
 	//"io"
 	"io/ioutil"
@@ -131,33 +131,24 @@ func FileRead(filename string) {
 	}
 	err = json.Unmarshal(input, &Queue)
 	if err != nil {
-		//Test contents of Queue! Is fatal needed?
-		log.Fatal("FATAL: Could not decode file input! json error: %s", err.Error())
+		if _, err := os.Create(config.QUEUE_FILENAME); err != nil {
+			log.Fatal("FATAL: Could not create queue file!")
+		}
+		log.Printf("ERROR: Could not decode file input! Queue has been reset..")
 	}
 }
 
 func FileWrite(filename string) {
 	output, err := json.Marshal(Queue)
 	if err != nil {
-		log.Printf("ERROR: Could not encode queue! json error: %s", err.Error())
+		log.Printf("ERROR: Could not encode queue!")
 	}
 	err = ioutil.WriteFile(filename, output, 0666)
 	if err != nil {
-		log.Printf("ERROR: Coult not write queue to file! error: %s", err.Error())
+		log.Printf("ERROR: Could not write queue to file! error: %s", err.Error())
 	}
 }
 
-//-----------------------------------------------------
-/*
-	- Idle
-		- Abs avstand
-	- På vei mot etasjen, plukker opp på veien
-		- Abs avstand + stopp
-	- På vei mot etasjen, skal passere
-		- Abs avstand + 2*passeravstand + stopp
-	- På vei vekk fra etasjen
-		- 2*avstand til furthest + abs avstand + stopp
-*/
 func Calculate(addr string, button config.ButtonStruct) int {
 	const COST_MOVE_ONE_FLOOR = 1
 	const COST_DOOR_OPEN = 1

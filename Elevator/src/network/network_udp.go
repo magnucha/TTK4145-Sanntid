@@ -55,7 +55,6 @@ func EncodeAndForwardTransmission(ch_transmit chan<- []byte, ch_outgoing_msg cha
 			retransmit := func() {
 				ch_outgoing_msg <- msg
 				delete(message_log, string(json_msg))
-				log.Println("Retransmission!")
 			}
 			message_log[string(json_msg[14:])] = &ACK_Timer{cnt: 0, timer: time.AfterFunc(config.TIMEOUT_UDP, retransmit)}
 		}

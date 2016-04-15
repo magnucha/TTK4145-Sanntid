@@ -4,6 +4,7 @@ import (
 	"config"
 	"queue"
 	"time"
+	"log"
 )
 
 func ReadButtons(ch_button_polling chan<- config.ButtonStruct) {
@@ -48,5 +49,25 @@ func FloorPoller(ch_floor_poll chan<- int) {
 			prev = current_floor
 			ch_floor_poll <- current_floor
 		}
+	}
+}
+
+func KillDefective() {
+	backup_kill := func(){
+		config.UDP_BACKUP_MSG = "Kill backup"
+		time.Sleep(300*time.Millisecond)
+		log.Fatal("Hardware not responding! Killing elevator...")
+	}
+	config.Local_elev.Timer = time.AfterFunc(config.TIMEOUT_HARDWARE, backup_kill)
+	config.Local_elev.Timer.Stop()
+	prev_idle_status := true
+	for {
+		if !config.Local_elev.Is_idle && (prev_idle_status == true) {
+			config.Local_elev.Timer.Reset(config.TIMEOUT_HARDWARE)
+		} else if config.Local_elev.Is_idle {
+			config.Local_elev.Timer.Stop()
+		}
+		prev_idle_status = config.Local_elev.Is_idle
+		time.Sleep(100*time.Millisecond)
 	}
 }

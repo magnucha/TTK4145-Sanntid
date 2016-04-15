@@ -24,7 +24,6 @@ func Init(ch_outgoing_msg chan config.Message, ch_incoming_msg chan<- config.Mes
 	StoreLocalAddr()
 	UDP_alive_socket := UDPCreateSendSocket(config.Laddr + config.UDP_ALIVE_PORT)
 
-	//We choose to begin receiving UDP after broadcast to avoid creating a connection to ourselves
 	go UDPSend(UDP_broadcast_socket, ch_UDP_transmit)
 	go UDPAliveSpam(UDP_alive_socket)
 	go UDPReceive(UDP_listen_socket, ch_UDPReceived)
@@ -52,7 +51,7 @@ func EncodeAndForwardTransmission(ch_transmit chan<- []byte, ch_outgoing_msg cha
 			continue
 		}
 
-		if (msg.Msg_type == config.AddOrder || msg.Msg_type == config.DeleteOrder) && len(config.Active_elevs) > 1 {
+		if (msg.Msg_type == config.ADD_ORDER || msg.Msg_type == config.DELETE_ORDER) && len(config.Active_elevs) > 1 {
 			retransmit := func() {
 				ch_outgoing_msg <- msg
 				delete(message_log, string(json_msg))

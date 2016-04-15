@@ -59,7 +59,7 @@ func UDPReceive(conn *net.UDPConn, ch_received chan<- config.NetworkMessage) {
 func UDPAliveSpam(conn *net.UDPConn) {
 	time.Sleep(2*time.Second)
 	for {
-		msg := config.UDP_PRESENCE_MSG
+		msg := config.UDP_BACKUP_MSG
 		_, err := conn.Write([]byte(msg))
 		if err != nil{
 			log.Printf("UDP alive error: %s", err.Error())

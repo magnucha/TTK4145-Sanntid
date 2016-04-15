@@ -38,7 +38,7 @@ func EventOrderReceived() {
 		} else {
 			target = queue.GetOptimalElev(button)
 		}
-		queue.AddOrder(button, target, ch_outgoing, ch_order_received)
+		queue.AddOrder(button, target, ch_order_received)
 
 		if target == config.Laddr {
 			if config.Local_elev.Door_open {

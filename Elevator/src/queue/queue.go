@@ -24,7 +24,7 @@ func DeleteOrder(floor int, ch_outgoing_msg chan<- config.Message, call_is_local
 	last_button := config.BUTTON_CALL_DOWN
 	if call_is_local {
 		last_button = config.BUTTON_COMMAND
-		ch_outgoing_msg <- config.Message{Msg_type: config.DeleteOrder, Button: config.ButtonStruct{Floor: floor}}
+		ch_outgoing_msg <- config.Message{Msg_type: config.DELETE_ORDER, Button: config.ButtonStruct{Floor: floor}}
 	}
 	for button := config.BUTTON_CALL_UP; button <= last_button; button++ {
 		Queue[floor][button].Active = false
@@ -36,13 +36,12 @@ func DeleteOrder(floor int, ch_outgoing_msg chan<- config.Message, call_is_local
 	FileWrite(config.QUEUE_FILENAME)
 }
 
-func AddOrder(button config.ButtonStruct, addr string, ch_outgoing_msg chan<- config.Message, ch_new_order chan<- config.ButtonStruct) {
+func AddOrder(button config.ButtonStruct, addr string, ch_new_order chan<- config.ButtonStruct) {
 	Queue[button.Floor][button.Button_type].Active = true
 	Queue[button.Floor][button.Button_type].Addr = addr
 	order_timeout := func() {
-		DeleteOrder(button.Floor, ch_outgoing_msg, false)
+		DeleteOrder(button.Floor, nil, false)
 		ch_new_order <- button
-		log.Printf("Reassining")
 	}
 	Queue[button.Floor][button.Button_type].Timer = time.AfterFunc(config.TIMEOUT_ORDER, order_timeout)
 	FileWrite(config.QUEUE_FILENAME)
@@ -181,7 +180,7 @@ func Calculate(addr string, button config.ButtonStruct) int {
 			}
 			cost += int(math.Abs(float64(furthest_floor-button.Floor))) * COST_MOVE_ONE_FLOOR * 2
 		}
-		//Is moving away from destination floor
+	//Is moving away from destination floor
 	} else if !elev.Is_idle {
 		furthest_floor := -1
 		for f := elev.Last_floor; f >= 0 && f < config.NUM_FLOORS; f += int(elev.Direction) {

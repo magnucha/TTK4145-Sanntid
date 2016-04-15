@@ -44,6 +44,7 @@ func Init() bool {
 
 	config.Active_elevs[config.Laddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: GetFloorSensorSignal()}
 	config.Local_elev = config.Active_elevs[config.Laddr]
+	go KillDefective()
 	return true
 }
 
@@ -125,12 +126,4 @@ func GetFloorSensorSignal() int {
 	} else {
 		return -1
 	}
-}
-
-func GetStopSignal() bool {
-	return IO_Read_Bit(STOP)
-}
-
-func GetObstructionSignal() bool {
-	return IO_Read_Bit(OBSTRUCTION)
 }

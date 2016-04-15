@@ -54,13 +54,12 @@ func main() {
 		case button := <-ch_button_pressed:
 			ch_new_order <- button
 			if button.Button_type != config.BUTTON_COMMAND {
-				ch_outgoing_msg <- config.Message{Msg_type: config.AddOrder, Button: button}
+				ch_outgoing_msg <- config.Message{Msg_type: config.ADD_ORDER, Button: button}
 			}
 		case floor := <-ch_floor_poll:
 			fsm.EventReachedFloor(floor)
 		}
 	}
-
 }
 
 func MessageServer() {
@@ -80,13 +79,12 @@ func MessageServer() {
 			}
 			StateCopy(config.Active_elevs[msg.Raddr], &msg.State)
 			config.Active_elevs[msg.Raddr].Timer.Reset(config.TIMEOUT_REMOTE)
-		case config.AddOrder:
+		case config.ADD_ORDER:
 			ch_new_order <- msg.Button
 			ACK_msg := msg
 			ACK_msg.Msg_type = config.ACK
 			ch_outgoing_msg <- ACK_msg
-		case config.DeleteOrder:
-			log.Println("Remote delete order received")
+		case config.DELETE_ORDER:
 			queue.DeleteOrder(msg.Button.Floor, ch_outgoing_msg, false)
 			ACK_msg := msg
 			ACK_msg.Msg_type = config.ACK
@@ -108,11 +106,11 @@ func SetActive(raddr string) {
 			return
 		}
 	}
-	killer := func() {
+	elev_killer := func() {
 		delete(config.Active_elevs, raddr)
 		queue.ReassignOrders(raddr, ch_new_order)
 	}
-	config.Active_elevs[raddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: -1, Timer: time.AfterFunc(config.TIMEOUT_REMOTE, killer)}
+	config.Active_elevs[raddr] = &config.ElevState{Is_idle: true, Door_open: false, Direction: config.DIR_STOP, Last_floor: -1, Timer: time.AfterFunc(config.TIMEOUT_REMOTE, elev_killer)}
 }
 
 func StateCopy(a *config.ElevState, b *config.ElevState) {
@@ -132,8 +130,11 @@ func BackupHold() {
 	for {
 		select {
 		case msg := <-ch_reset:
-			if string(msg.Data[:len(config.UDP_PRESENCE_MSG)]) == config.UDP_PRESENCE_MSG {
+			if string(msg.Data[:len(config.UDP_BACKUP_MSG)]) == config.UDP_BACKUP_MSG {
 				timer_alive.Reset(config.TIMEOUT_LOCAL)
+			}
+			if string(msg.Data[:11]) == "Kill backup" {
+				log.Fatal("Kill command recieved!")
 			}
 		case <-timer_alive.C:
 			return
